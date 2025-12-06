@@ -1,45 +1,122 @@
-import { useBooking } from '@/context/BookingContext';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { UserCheck, UserX } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { Stethoscope, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function AvailabilityToggle() {
-  const { settings, updateSettings } = useBooking();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, []);
+
+  const fetchAvailability = async () => {
+    const { data, error } = await supabase
+      .from('clinic_settings')
+      .select('id, doctor_available')
+      .single();
+
+    if (error) {
+      console.error('Error fetching availability:', error);
+    } else {
+      setIsAvailable(data.doctor_available);
+      setSettingsId(data.id);
+    }
+    setIsLoading(false);
+  };
+
+  const toggleAvailability = async () => {
+    if (!settingsId) return;
+
+    const newValue = !isAvailable;
+
+    const { error } = await supabase
+      .from('clinic_settings')
+      .update({ doctor_available: newValue, updated_by: user?.id })
+      .eq('id', settingsId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update availability.",
+        variant: "destructive",
+      });
+    } else {
+      setIsAvailable(newValue);
+      toast({
+        title: newValue ? "Now Available" : "Set as Unavailable",
+        description: newValue 
+          ? "Patients can now book appointments."
+          : "Booking is now closed for today.",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="animate-pulse">
+        <CardContent className="pt-6">
+          <div className="h-20 bg-muted rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card variant="elevated">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {settings.isAvailable ? (
-            <UserCheck className="h-5 w-5 text-success" />
-          ) : (
-            <UserX className="h-5 w-5 text-destructive" />
-          )}
-          Doctor Availability
-        </CardTitle>
-        <CardDescription>
-          Toggle your availability for today's appointments
-        </CardDescription>
+    <Card variant="elevated" className={isAvailable ? 'border-success/30' : 'border-destructive/30'}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`rounded-full p-2 ${isAvailable ? 'bg-success/10' : 'bg-destructive/10'}`}>
+              <Stethoscope className={`h-5 w-5 ${isAvailable ? 'text-success' : 'text-destructive'}`} />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Doctor Availability</CardTitle>
+              <CardDescription>
+                Toggle to open or close bookings for today
+              </CardDescription>
+            </div>
+          </div>
+          <Badge variant={isAvailable ? 'success' : 'destructive'} className="flex items-center gap-1">
+            {isAvailable ? (
+              <>
+                <CheckCircle2 className="h-3 w-3" />
+                Available
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-3 w-3" />
+                Unavailable
+              </>
+            )}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between rounded-xl bg-muted/50 p-4">
-          <div className="space-y-1">
-            <Label htmlFor="availability" className="text-base font-medium cursor-pointer">
-              {settings.isAvailable ? 'Doctor is Available' : 'Doctor is NOT Available'}
+        <div className="flex items-center justify-between rounded-lg bg-muted p-4">
+          <div className="space-y-0.5">
+            <Label htmlFor="availability-toggle" className="text-base font-medium">
+              {isAvailable ? 'Bookings are Open' : 'Bookings are Closed'}
             </Label>
             <p className="text-sm text-muted-foreground">
-              {settings.isAvailable 
-                ? 'Patients can book appointments for today'
-                : 'All booking is currently disabled'
-              }
+              {isAvailable 
+                ? 'Patients can book appointments during open hours.'
+                : 'Patients will see "Doctor is unavailable today" message.'}
             </p>
           </div>
           <Switch
-            id="availability"
-            checked={settings.isAvailable}
-            onCheckedChange={(checked) => updateSettings({ isAvailable: checked })}
-            className="data-[state=checked]:bg-success"
+            id="availability-toggle"
+            checked={isAvailable}
+            onCheckedChange={toggleAvailability}
           />
         </div>
       </CardContent>

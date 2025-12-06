@@ -5,18 +5,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useBooking } from '@/context/BookingContext';
-import { SlotType } from '@/types/booking';
+import { supabase } from '@/integrations/supabase/client';
 import { Sun, Moon, MapPin, Clock, Users, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 interface BookingCardProps {
-  slotType: SlotType;
+  slotType: 'morning' | 'evening';
+}
+
+interface ClinicSettings {
+  doctor_available: boolean;
+  minutes_per_patient: number;
+  morning_clinic_name: string;
+  morning_clinic_address: string;
+  morning_start_time: string;
+  morning_end_time: string;
+  morning_booking_open_time: string;
+  evening_clinic_name: string;
+  evening_clinic_address: string;
+  evening_start_time: string;
+  evening_end_time: string;
+  evening_booking_open_time: string;
 }
 
 export function BookingCard({ slotType }: BookingCardProps) {
-  const { settings, addBooking, getQueueForSlot, isBookingOpen, hasBookedToday } = useBooking();
   const { toast } = useToast();
   
   const [mobileNumber, setMobileNumber] = useState('');
@@ -25,17 +38,74 @@ export function BookingCard({ slotType }: BookingCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<{ queueNumber: number; estimatedTime: Date } | null>(null);
   const [timeUntilOpen, setTimeUntilOpen] = useState<string>('');
+  const [settings, setSettings] = useState<ClinicSettings | null>(null);
+  const [queueCount, setQueueCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const clinic = slotType === 'morning' ? settings.morningClinic : settings.eveningClinic;
   const isMorning = slotType === 'morning';
-  const bookingOpen = isBookingOpen(slotType);
-  const queueCount = getQueueForSlot(slotType).filter(b => b.status === 'waiting').length;
+
+  useEffect(() => {
+    fetchData();
+    const cleanup = setupRealtimeSubscription();
+    return cleanup;
+  }, [slotType]);
+
+  const fetchData = async () => {
+    // Fetch settings
+    const { data: settingsData } = await supabase
+      .from('clinic_settings')
+      .select('*')
+      .single();
+
+    if (settingsData) {
+      setSettings(settingsData);
+    }
+
+    // Fetch queue count
+    const today = new Date().toISOString().split('T')[0];
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('booking_date', today)
+      .eq('slot_type', slotType)
+      .eq('status', 'waiting');
+
+    setQueueCount(bookings?.length || 0);
+    setIsLoading(false);
+  };
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel(`bookings-${slotType}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   // Calculate time until booking opens
   useEffect(() => {
+    if (!settings) return;
+
+    const bookingOpenTime = isMorning 
+      ? settings.morning_booking_open_time 
+      : settings.evening_booking_open_time;
+
     const calculateTimeUntilOpen = () => {
       const now = new Date();
-      const [openHour, openMin] = clinic.bookingOpenTime.split(':').map(Number);
+      const [openHour, openMin] = bookingOpenTime.split(':').map(Number);
       const openTime = new Date();
       openTime.setHours(openHour, openMin, 0, 0);
 
@@ -61,7 +131,43 @@ export function BookingCard({ slotType }: BookingCardProps) {
     calculateTimeUntilOpen();
     const interval = setInterval(calculateTimeUntilOpen, 1000);
     return () => clearInterval(interval);
-  }, [clinic.bookingOpenTime]);
+  }, [settings, isMorning]);
+
+  const isBookingOpen = (): boolean => {
+    if (!settings || !settings.doctor_available) return false;
+
+    const now = new Date();
+    const bookingOpenTime = isMorning 
+      ? settings.morning_booking_open_time 
+      : settings.evening_booking_open_time;
+    const endTime = isMorning 
+      ? settings.morning_end_time 
+      : settings.evening_end_time;
+
+    const [openHour, openMin] = bookingOpenTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+
+    const openDateTime = new Date();
+    openDateTime.setHours(openHour, openMin, 0, 0);
+
+    const endDateTime = new Date();
+    endDateTime.setHours(endHour, endMin, 0, 0);
+
+    return now >= openDateTime && now <= endDateTime;
+  };
+
+  const hasBookedToday = async (phone: string): Promise<boolean> => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('phone', phone)
+      .eq('booking_date', today)
+      .neq('status', 'consulted')
+      .limit(1);
+
+    return (data?.length || 0) > 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,28 +191,70 @@ export function BookingCard({ slotType }: BookingCardProps) {
     }
 
     setIsSubmitting(true);
-    
-    // Simulate a small delay for UX
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const result = addBooking(mobileNumber, patientName, slotType);
-    
+
+    // Check if already booked
+    const alreadyBooked = await hasBookedToday(mobileNumber);
+    if (alreadyBooked) {
+      toast({
+        title: "Already Booked",
+        description: "You have already booked a slot today. Please visit at your scheduled time.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Get current queue count for this slot
+    const today = new Date().toISOString().split('T')[0];
+    const { data: existingBookings } = await supabase
+      .from('bookings')
+      .select('queue_number')
+      .eq('booking_date', today)
+      .eq('slot_type', slotType)
+      .order('queue_number', { ascending: false })
+      .limit(1);
+
+    const nextQueueNumber = (existingBookings?.[0]?.queue_number || 0) + 1;
+
+    // Create booking
+    const { data: newBooking, error } = await supabase
+      .from('bookings')
+      .insert({
+        patient_name: patientName || 'Guest Patient',
+        phone: mobileNumber,
+        slot_type: slotType,
+        queue_number: nextQueueNumber,
+        booking_date: today,
+      })
+      .select()
+      .single();
+
     setIsSubmitting(false);
 
-    if (result.success && result.booking) {
+    if (error) {
+      toast({
+        title: "Booking Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (newBooking) {
+      // Calculate estimated time
+      const startTime = isMorning 
+        ? settings!.morning_start_time 
+        : settings!.evening_start_time;
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      
+      const estimatedTime = new Date();
+      estimatedTime.setHours(startHour, startMin, 0, 0);
+      estimatedTime.setMinutes(estimatedTime.getMinutes() + ((nextQueueNumber - 1) * settings!.minutes_per_patient));
+
       setBookingResult({
-        queueNumber: result.booking.queueNumber,
-        estimatedTime: result.booking.estimatedTime,
+        queueNumber: nextQueueNumber,
+        estimatedTime,
       });
       toast({
         title: "Booking Successful! 🎉",
-        description: `You are #${result.booking.queueNumber} in the queue.`,
-      });
-    } else {
-      toast({
-        title: "Booking Failed",
-        description: result.error,
-        variant: "destructive",
+        description: `You are #${nextQueueNumber} in the queue.`,
       });
     }
   };
@@ -118,7 +266,27 @@ export function BookingCard({ slotType }: BookingCardProps) {
     return format(date, 'h:mm a');
   };
 
-  if (!settings.isAvailable) {
+  if (isLoading || !settings) {
+    return (
+      <Card className="animate-pulse">
+        <CardContent className="pt-6">
+          <div className="h-64 bg-muted rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const clinic = {
+    name: isMorning ? settings.morning_clinic_name : settings.evening_clinic_name,
+    address: isMorning ? settings.morning_clinic_address : settings.evening_clinic_address,
+    startTime: isMorning ? settings.morning_start_time : settings.evening_start_time,
+    endTime: isMorning ? settings.morning_end_time : settings.evening_end_time,
+    bookingOpenTime: isMorning ? settings.morning_booking_open_time : settings.evening_booking_open_time,
+  };
+
+  const bookingOpen = isBookingOpen();
+
+  if (!settings.doctor_available) {
     return (
       <Card variant={isMorning ? 'morning' : 'evening'} className="opacity-75">
         <CardHeader className="text-center">
@@ -175,8 +343,6 @@ export function BookingCard({ slotType }: BookingCardProps) {
     );
   }
 
-  const isClosed = (isMorning && settings.morningBookingsClosed) || (!isMorning && settings.eveningBookingsClosed);
-
   return (
     <Card variant={isMorning ? 'morning' : 'evening'} className="animate-fade-in">
       <CardHeader>
@@ -213,7 +379,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
           <span className="text-lg font-semibold">{queueCount} patients</span>
         </div>
 
-        {!bookingOpen && !isClosed && (
+        {!bookingOpen && (
           <div className={`rounded-xl p-6 text-center ${isMorning ? 'bg-morning/10' : 'bg-evening/10'}`}>
             <Clock className={`mx-auto mb-3 h-8 w-8 ${isMorning ? 'text-morning' : 'text-evening'}`} />
             <p className="text-sm text-muted-foreground mb-2">Booking opens at</p>
@@ -226,15 +392,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
           </div>
         )}
 
-        {isClosed && (
-          <div className="rounded-xl bg-destructive/10 p-6 text-center">
-            <AlertCircle className="mx-auto mb-3 h-8 w-8 text-destructive" />
-            <p className="font-medium text-destructive">Booking Closed</p>
-            <p className="text-sm text-muted-foreground mt-1">This session's booking has been closed.</p>
-          </div>
-        )}
-
-        {bookingOpen && !isClosed && (
+        {bookingOpen && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor={`mobile-${slotType}`}>Mobile Number *</Label>

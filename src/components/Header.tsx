@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Stethoscope, Settings, Menu, User, MapPin, Phone, Home, X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Stethoscope, Settings, Menu, User, MapPin, Phone, Home, LogOut, LayoutDashboard, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
@@ -15,6 +16,12 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, role, signOut, isStaff, isLoading } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,21 +55,53 @@ export function Header() {
             </Link>
           ))}
           <div className="ml-2 h-6 w-px bg-border" />
-          <Link to="/admin">
-            <Button variant="outline" size="sm" className="gap-2 ml-2">
-              <Settings className="h-4 w-4" />
-              Admin
-            </Button>
-          </Link>
+          
+          {/* Auth buttons */}
+          {!isLoading && (
+            <>
+              {user ? (
+                <>
+                  {isStaff ? (
+                    <Link to="/admin">
+                      <Button variant="outline" size="sm" className="gap-2 ml-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to="/my-booking">
+                      <Button variant="outline" size="sm" className="gap-2 ml-2">
+                        <CalendarDays className="h-4 w-4" />
+                        My Booking
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 ml-1">
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Link to="/auth">
+                  <Button size="sm" className="gap-2 ml-2">
+                    <User className="h-4 w-4" />
+                    Login
+                  </Button>
+                </Link>
+              )}
+            </>
+          )}
         </nav>
 
         {/* Mobile Navigation */}
         <div className="flex items-center gap-2 md:hidden">
-          <Link to="/admin">
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </Link>
+          {user && isStaff && (
+            <Link to="/admin">
+              <Button variant="ghost" size="icon">
+                <LayoutDashboard className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -98,6 +137,43 @@ export function Header() {
                     </Button>
                   </Link>
                 ))}
+                
+                <div className="border-t pt-4 space-y-2">
+                  {user ? (
+                    <>
+                      {isStaff ? (
+                        <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full justify-start gap-3">
+                            <LayoutDashboard className="h-5 w-5" />
+                            Dashboard
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link to="/my-booking" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="outline" className="w-full justify-start gap-3">
+                            <CalendarDays className="h-5 w-5" />
+                            My Booking
+                          </Button>
+                        </Link>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 text-destructive hover:text-destructive" 
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-5 w-5" />
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full justify-start gap-3">
+                        <User className="h-5 w-5" />
+                        Login
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
