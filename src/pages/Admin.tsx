@@ -1,31 +1,42 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { AdminLogin } from '@/components/admin/AdminLogin';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { AvailabilityToggle } from '@/components/admin/AvailabilityToggle';
 import { QueueManagement } from '@/components/admin/QueueManagement';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
+import { DoctorDashboard } from '@/components/admin/DoctorDashboard';
+import { StaffManagement } from '@/components/admin/StaffManagement';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Stethoscope, Home, LogOut, Users, Settings, Sun, Moon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Stethoscope, Home, LogOut, Users, Settings, LayoutDashboard, UserCog } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Admin = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+  const { user, role, isLoading, signOut, isDoctor, isStaff } = useAuth();
 
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin-authenticated');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
+    if (!isLoading && (!user || !isStaff)) {
+      navigate('/auth');
     }
-  }, []);
+  }, [user, isStaff, isLoading, navigate]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin-authenticated');
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
-  if (!isAuthenticated) {
-    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user || !isStaff) {
+    return null;
   }
 
   return (
@@ -38,7 +49,12 @@ const Admin = () => {
               <Stethoscope className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-display text-lg font-semibold leading-tight">Admin Dashboard</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display text-lg font-semibold leading-tight">Admin Dashboard</h1>
+                <Badge variant={role === 'doctor' ? 'default' : 'secondary'} className="capitalize">
+                  {role}
+                </Badge>
+              </div>
               <p className="text-xs text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
             </div>
           </div>
@@ -65,17 +81,35 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="queues" className="animate-fade-in stagger-1">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <Tabs defaultValue={isDoctor ? "dashboard" : "queues"} className="animate-fade-in stagger-1">
+          <TabsList className={`grid w-full ${isDoctor ? 'grid-cols-4 lg:w-[600px]' : 'grid-cols-2 lg:w-[400px]'}`}>
+            {isDoctor && (
+              <TabsTrigger value="dashboard" className="gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="queues" className="gap-2">
               <Users className="h-4 w-4" />
-              Patient Queues
+              <span className="hidden sm:inline">Queues</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              Settings
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
+            {isDoctor && (
+              <TabsTrigger value="staff" className="gap-2">
+                <UserCog className="h-4 w-4" />
+                <span className="hidden sm:inline">Staff</span>
+              </TabsTrigger>
+            )}
           </TabsList>
+
+          {isDoctor && (
+            <TabsContent value="dashboard" className="mt-6">
+              <DoctorDashboard />
+            </TabsContent>
+          )}
 
           <TabsContent value="queues" className="mt-6 space-y-6">
             <div className="grid gap-6 xl:grid-cols-2">
@@ -87,6 +121,12 @@ const Admin = () => {
           <TabsContent value="settings" className="mt-6">
             <SettingsPanel />
           </TabsContent>
+
+          {isDoctor && (
+            <TabsContent value="staff" className="mt-6">
+              <StaffManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
