@@ -55,13 +55,16 @@ const Auth = () => {
   }, [user, role, navigate]);
 
   const checkIfDoctorsExist = async () => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('role', 'doctor')
-      .limit(1);
-
-    setNoDoctorsExist(!data || data.length === 0);
+    // Use the security definer function to check - works without auth
+    const { data, error } = await supabase.rpc('no_doctors_exist');
+    
+    if (error) {
+      console.error('Error checking doctors:', error);
+      setNoDoctorsExist(false);
+      return;
+    }
+    
+    setNoDoctorsExist(data === true);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
