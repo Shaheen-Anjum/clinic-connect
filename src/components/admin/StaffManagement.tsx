@@ -98,7 +98,17 @@ export function StaffManagement() {
     setIsCreating(true);
 
     try {
-      // Create the user with signUp
+      // First, insert the role for the new user using an edge function or admin approach
+      // Since signUp creates a new session, we need to:
+      // 1. Store current session
+      // 2. Create user
+      // 3. Insert role (while we still have doctor session from the insert)
+      // 4. Restore session
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentSession = sessionData.session;
+
+      // Create the user - this will trigger handle_new_user for profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -112,8 +122,16 @@ export function StaffManagement() {
 
       if (authError) throw authError;
 
+      // Restore the doctor's session immediately
+      if (currentSession) {
+        await supabase.auth.setSession({
+          access_token: currentSession.access_token,
+          refresh_token: currentSession.refresh_token,
+        });
+      }
+
       if (authData.user) {
-        // Assign role
+        // Now insert the role with doctor's session restored
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
