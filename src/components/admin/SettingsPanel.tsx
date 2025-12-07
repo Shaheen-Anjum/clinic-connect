@@ -16,11 +16,13 @@ interface ClinicSettings {
   morning_start_time: string;
   morning_end_time: string;
   morning_booking_open_time: string;
+  morning_booking_close_time: string;
   evening_clinic_name: string;
   evening_clinic_address: string;
   evening_start_time: string;
   evening_end_time: string;
   evening_booking_open_time: string;
+  evening_booking_close_time: string;
 }
 
 export function SettingsPanel() {
@@ -167,7 +169,7 @@ export function SettingsPanel() {
                 onChange={(e) => updateSettings({ morning_end_time: e.target.value })}
               />
             </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="morning-booking">Booking Opens At</Label>
               <Input
                 id="morning-booking"
@@ -175,10 +177,19 @@ export function SettingsPanel() {
                 value={settings.morning_booking_open_time}
                 onChange={(e) => updateSettings({ morning_booking_open_time: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">
-                Patients can start booking at this time
-              </p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="morning-booking-close">Booking Closes At</Label>
+              <Input
+                id="morning-booking-close"
+                type="time"
+                value={settings.morning_booking_close_time}
+                onChange={(e) => updateSettings({ morning_booking_close_time: e.target.value })}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              Patients can book between these times
+            </p>
           </div>
         </div>
 
@@ -225,7 +236,7 @@ export function SettingsPanel() {
                 onChange={(e) => updateSettings({ evening_end_time: e.target.value })}
               />
             </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="evening-booking">Booking Opens At</Label>
               <Input
                 id="evening-booking"
@@ -233,10 +244,19 @@ export function SettingsPanel() {
                 value={settings.evening_booking_open_time}
                 onChange={(e) => updateSettings({ evening_booking_open_time: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground">
-                Patients can start booking at this time
-              </p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="evening-booking-close">Booking Closes At</Label>
+              <Input
+                id="evening-booking-close"
+                type="time"
+                value={settings.evening_booking_close_time}
+                onChange={(e) => updateSettings({ evening_booking_close_time: e.target.value })}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              Patients can book between these times
+            </p>
           </div>
         </div>
       </CardContent>

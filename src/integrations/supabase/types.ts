@@ -53,6 +53,7 @@ export type Database = {
       clinic_settings: {
         Row: {
           doctor_available: boolean
+          evening_booking_close_time: string
           evening_booking_open_time: string
           evening_clinic_address: string
           evening_clinic_name: string
@@ -60,6 +61,7 @@ export type Database = {
           evening_start_time: string
           id: string
           minutes_per_patient: number
+          morning_booking_close_time: string
           morning_booking_open_time: string
           morning_clinic_address: string
           morning_clinic_name: string
@@ -70,6 +72,7 @@ export type Database = {
         }
         Insert: {
           doctor_available?: boolean
+          evening_booking_close_time?: string
           evening_booking_open_time?: string
           evening_clinic_address?: string
           evening_clinic_name?: string
@@ -77,6 +80,7 @@ export type Database = {
           evening_start_time?: string
           id?: string
           minutes_per_patient?: number
+          morning_booking_close_time?: string
           morning_booking_open_time?: string
           morning_clinic_address?: string
           morning_clinic_name?: string
@@ -87,6 +91,7 @@ export type Database = {
         }
         Update: {
           doctor_available?: boolean
+          evening_booking_close_time?: string
           evening_booking_open_time?: string
           evening_clinic_address?: string
           evening_clinic_name?: string
@@ -94,6 +99,7 @@ export type Database = {
           evening_start_time?: string
           id?: string
           minutes_per_patient?: number
+          morning_booking_close_time?: string
           morning_booking_open_time?: string
           morning_clinic_address?: string
           morning_clinic_name?: string
