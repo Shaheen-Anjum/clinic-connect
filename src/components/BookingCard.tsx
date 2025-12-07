@@ -22,11 +22,13 @@ interface ClinicSettings {
   morning_start_time: string;
   morning_end_time: string;
   morning_booking_open_time: string;
+  morning_booking_close_time: string;
   evening_clinic_name: string;
   evening_clinic_address: string;
   evening_start_time: string;
   evening_end_time: string;
   evening_booking_open_time: string;
+  evening_booking_close_time: string;
 }
 
 export function BookingCard({ slotType }: BookingCardProps) {
@@ -140,20 +142,20 @@ export function BookingCard({ slotType }: BookingCardProps) {
     const bookingOpenTime = isMorning 
       ? settings.morning_booking_open_time 
       : settings.evening_booking_open_time;
-    const endTime = isMorning 
-      ? settings.morning_end_time 
-      : settings.evening_end_time;
+    const bookingCloseTime = isMorning 
+      ? settings.morning_booking_close_time 
+      : settings.evening_booking_close_time;
 
     const [openHour, openMin] = bookingOpenTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
+    const [closeHour, closeMin] = bookingCloseTime.split(':').map(Number);
 
     const openDateTime = new Date();
     openDateTime.setHours(openHour, openMin, 0, 0);
 
-    const endDateTime = new Date();
-    endDateTime.setHours(endHour, endMin, 0, 0);
+    const closeDateTime = new Date();
+    closeDateTime.setHours(closeHour, closeMin, 0, 0);
 
-    return now >= openDateTime && now <= endDateTime;
+    return now >= openDateTime && now <= closeDateTime;
   };
 
   const hasBookedToday = async (phone: string): Promise<boolean> => {
@@ -282,6 +284,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
     startTime: isMorning ? settings.morning_start_time : settings.evening_start_time,
     endTime: isMorning ? settings.morning_end_time : settings.evening_end_time,
     bookingOpenTime: isMorning ? settings.morning_booking_open_time : settings.evening_booking_open_time,
+    bookingCloseTime: isMorning ? settings.morning_booking_close_time : settings.evening_booking_close_time,
   };
 
   const bookingOpen = isBookingOpen();
@@ -382,8 +385,8 @@ export function BookingCard({ slotType }: BookingCardProps) {
         {!bookingOpen && (
           <div className={`rounded-xl p-6 text-center ${isMorning ? 'bg-morning/10' : 'bg-evening/10'}`}>
             <Clock className={`mx-auto mb-3 h-8 w-8 ${isMorning ? 'text-morning' : 'text-evening'}`} />
-            <p className="text-sm text-muted-foreground mb-2">Booking opens at</p>
-            <p className="text-2xl font-semibold">{formatTime(clinic.bookingOpenTime)}</p>
+            <p className="text-sm text-muted-foreground mb-2">Booking window</p>
+            <p className="text-2xl font-semibold">{formatTime(clinic.bookingOpenTime)} - {formatTime(clinic.bookingCloseTime)}</p>
             {timeUntilOpen && (
               <p className={`mt-2 text-lg font-medium ${isMorning ? 'text-morning' : 'text-evening'}`}>
                 Opens in {timeUntilOpen}
