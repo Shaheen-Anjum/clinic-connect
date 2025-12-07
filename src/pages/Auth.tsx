@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Stethoscope, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Stethoscope, Mail, Lock, User, Phone, ArrowLeft, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -22,7 +23,6 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   fullName: z.string().trim().min(1, { message: "Name is required" }).max(100),
   phone: z.string().trim().min(10, { message: "Valid phone number required" }).max(15),
-  role: z.enum(['doctor', 'receptionist', 'patient']),
 });
 
 const Auth = () => {
@@ -31,14 +31,18 @@ const Auth = () => {
   const { user, signIn, signUp, isLoading, role } = useAuth();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [noDoctorsExist, setNoDoctorsExist] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({
     email: '',
     password: '',
     fullName: '',
     phone: '',
-    role: 'patient' as 'doctor' | 'receptionist' | 'patient',
   });
+
+  useEffect(() => {
+    checkIfDoctorsExist();
+  }, []);
 
   useEffect(() => {
     if (user && role) {
@@ -49,6 +53,16 @@ const Auth = () => {
       }
     }
   }, [user, role, navigate]);
+
+  const checkIfDoctorsExist = async () => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('role', 'doctor')
+      .limit(1);
+
+    setNoDoctorsExist(!data || data.length === 0);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +97,7 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent, asDoctor: boolean = false) => {
     e.preventDefault();
     
     const validation = signupSchema.safeParse(signupData);
@@ -96,24 +110,16 @@ const Auth = () => {
       return;
     }
 
-    // Check if trying to register as staff
-    if (signupData.role === 'doctor' || signupData.role === 'receptionist') {
-      toast({
-        title: "Registration Restricted",
-        description: "Doctor and Receptionist accounts can only be created by existing doctors. Please contact the administrator.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
+
+    const selectedRole = asDoctor ? 'doctor' : 'patient';
 
     const { error } = await signUp(
       signupData.email,
       signupData.password,
       signupData.fullName,
       signupData.phone,
-      signupData.role
+      selectedRole
     );
 
     if (error) {
@@ -127,10 +133,17 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Account Created!",
-        description: "You can now track your bookings.",
-      });
+      if (asDoctor) {
+        toast({
+          title: "Doctor Account Created!",
+          description: "You can now manage the clinic.",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "You can now track your bookings.",
+        });
+      }
     }
 
     setIsSubmitting(false);
@@ -212,7 +225,7 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4 mt-4">
-                <form onSubmit={handleSignup} className="space-y-4">
+                <form onSubmit={(e) => handleSignup(e, false)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <div className="relative">
@@ -277,13 +290,38 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground">
-                    Note: Patient accounts are for tracking your bookings. Doctor/Receptionist accounts are created by invitation only.
-                  </p>
-
                   <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
                     {isSubmitting ? 'Creating Account...' : 'Create Patient Account'}
                   </Button>
+
+                  {noDoctorsExist && (
+                    <div className="border-t pt-4 mt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Shield className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">First-time Setup</span>
+                        <Badge variant="secondary" className="text-xs">One-time only</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        No doctor account exists yet. Create the first doctor account to manage the clinic.
+                      </p>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        className="w-full" 
+                        size="lg" 
+                        disabled={isSubmitting}
+                        onClick={(e) => handleSignup(e as any, true)}
+                      >
+                        {isSubmitting ? 'Creating...' : 'Create Doctor Account'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {!noDoctorsExist && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Doctor/Receptionist accounts are created by existing doctors.
+                    </p>
+                  )}
                 </form>
               </TabsContent>
             </Tabs>
