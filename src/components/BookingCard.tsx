@@ -381,6 +381,34 @@ export function BookingCard({ slotType }: BookingCardProps) {
   // Show existing booking info if user has already booked
   if (existingBooking && user) {
     const isBookingMorning = existingBooking.slotType === 'morning';
+    const isMatchingSlot = (isMorning && isBookingMorning) || (!isMorning && !isBookingMorning);
+
+    // If booking is for a different slot, show message that they already booked
+    if (!isMatchingSlot) {
+      return (
+        <Card variant={isMorning ? 'morning' : 'evening'} className="animate-fade-in opacity-75">
+          <CardHeader className="text-center">
+            <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted`}>
+              <AlertCircle className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-xl">{isMorning ? 'Morning Slot' : 'Evening Slot'}</CardTitle>
+            <CardDescription className="text-base">{clinic.name}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <div className="rounded-xl p-4 bg-muted/50">
+              <p className="text-sm text-muted-foreground">
+                You have already booked the <span className="font-semibold">{isBookingMorning ? 'Morning' : 'Evening'} Slot</span> for today.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild className="w-full">
+              <a href="/my-booking">View Your Booking</a>
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Show full booking details on the matching slot card
     const existingClinic = {
       name: isBookingMorning ? settings?.morning_clinic_name : settings?.evening_clinic_name,
       address: isBookingMorning ? settings?.morning_clinic_address : settings?.evening_clinic_address,
