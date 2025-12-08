@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { Sun, Moon, MapPin, Clock, Users, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-
 interface BookingCardProps {
   slotType: 'morning' | 'evening';
 }
@@ -33,6 +34,8 @@ interface ClinicSettings {
 
 export function BookingCard({ slotType }: BookingCardProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   const [mobileNumber, setMobileNumber] = useState('');
   const [patientName, setPatientName] = useState('');
@@ -173,6 +176,17 @@ export function BookingCard({ slotType }: BookingCardProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is authenticated
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to book an appointment.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
     
     if (!mobileNumber || mobileNumber.length < 10) {
       toast({
