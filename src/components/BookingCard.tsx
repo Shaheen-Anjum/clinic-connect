@@ -42,9 +42,11 @@ export function BookingCard({ slotType }: BookingCardProps) {
   const [captchaChecked, setCaptchaChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResult, setBookingResult] = useState<{ queueNumber: number; estimatedTime: Date } | null>(null);
+  const [existingBooking, setExistingBooking] = useState<{ queueNumber: number; slotType: string; patientName: string; createdAt: string } | null>(null);
   const [timeUntilOpen, setTimeUntilOpen] = useState<string>('');
   const [settings, setSettings] = useState<ClinicSettings | null>(null);
   const [queueCount, setQueueCount] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const isMorning = slotType === 'morning';
@@ -53,7 +55,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
     fetchData();
     const cleanup = setupRealtimeSubscription();
     return cleanup;
-  }, [slotType]);
+  }, [slotType, user]);
 
   const fetchData = async () => {
     // Fetch settings
@@ -76,6 +78,50 @@ export function BookingCard({ slotType }: BookingCardProps) {
       .eq('status', 'waiting');
 
     setQueueCount(bookings?.length || 0);
+
+    // Check if logged-in user already has a booking for today
+    if (user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileData?.phone) {
+        const { data: existingBookingData } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('phone', profileData.phone)
+          .eq('booking_date', today)
+          .neq('status', 'consulted')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingBookingData) {
+          setExistingBooking({
+            queueNumber: existingBookingData.queue_number,
+            slotType: existingBookingData.slot_type,
+            patientName: existingBookingData.patient_name,
+            createdAt: existingBookingData.created_at,
+          });
+
+          // Calculate current position
+          const { data: waitingPatients } = await supabase
+            .from('bookings')
+            .select('queue_number')
+            .eq('booking_date', today)
+            .eq('slot_type', existingBookingData.slot_type)
+            .eq('status', 'waiting')
+            .lt('queue_number', existingBookingData.queue_number);
+
+          setCurrentPosition((waitingPatients?.length || 0) + 1);
+        } else {
+          setExistingBooking(null);
+        }
+      }
+    }
+
     setIsLoading(false);
   };
 
@@ -315,6 +361,75 @@ export function BookingCard({ slotType }: BookingCardProps) {
             The Doctor is unavailable today. Booking is closed.
           </CardDescription>
         </CardHeader>
+      </Card>
+    );
+  }
+
+  // Calculate estimated time for existing booking
+  const getExistingBookingEstimatedTime = () => {
+    if (!existingBooking || !settings) return null;
+    const isBookingMorning = existingBooking.slotType === 'morning';
+    const startTime = isBookingMorning ? settings.morning_start_time : settings.evening_start_time;
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const waitingBefore = currentPosition - 1;
+    const estimatedTime = new Date();
+    estimatedTime.setHours(startHour, startMin, 0, 0);
+    estimatedTime.setMinutes(estimatedTime.getMinutes() + (waitingBefore * settings.minutes_per_patient));
+    return estimatedTime;
+  };
+
+  // Show existing booking info if user has already booked
+  if (existingBooking && user) {
+    const isBookingMorning = existingBooking.slotType === 'morning';
+    const existingClinic = {
+      name: isBookingMorning ? settings?.morning_clinic_name : settings?.evening_clinic_name,
+      address: isBookingMorning ? settings?.morning_clinic_address : settings?.evening_clinic_address,
+    };
+    const estimatedTime = getExistingBookingEstimatedTime();
+
+    return (
+      <Card variant={isMorning ? 'morning' : 'evening'} className="animate-fade-in">
+        <CardHeader className="text-center">
+          <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${isBookingMorning ? 'bg-morning/20' : 'bg-evening/20'}`}>
+            <CheckCircle2 className={`h-8 w-8 ${isBookingMorning ? 'text-morning' : 'text-evening'}`} />
+          </div>
+          <CardTitle className="text-xl">You have a booking!</CardTitle>
+          <CardDescription className="text-base">{existingClinic.name}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center">
+          <div className={`rounded-xl p-4 ${isBookingMorning ? 'bg-morning/10' : 'bg-evening/10'}`}>
+            <p className="text-xs text-muted-foreground">Queue Number</p>
+            <p className={`text-4xl font-bold font-display ${isBookingMorning ? 'text-morning' : 'text-evening'}`}>
+              #{existingBooking.queueNumber}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="text-xs text-muted-foreground">Position</p>
+              <p className="text-lg font-semibold">#{currentPosition}</p>
+            </div>
+            {estimatedTime && (
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs text-muted-foreground">Expected Time</p>
+                <p className="text-lg font-semibold">{format(estimatedTime, 'h:mm a')}</p>
+              </div>
+            )}
+          </div>
+
+          <Badge variant={isBookingMorning ? 'morning' : 'evening'}>
+            {isBookingMorning ? 'Morning Slot' : 'Evening Slot'}
+          </Badge>
+
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{existingClinic.address}</span>
+          </div>
+
+          <Button variant="outline" size="sm" asChild className="w-full">
+            <a href="/my-booking">View Full Details</a>
+          </Button>
+        </CardContent>
       </Card>
     );
   }
