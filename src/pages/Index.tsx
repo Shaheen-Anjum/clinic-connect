@@ -248,117 +248,46 @@ const Index = () => {
         </section>
 
         {/* Testimonial Section */}
-        <section className="relative rounded-2xl sm:rounded-3xl overflow-hidden animate-fade-in stagger-7">
-          {/* Background with gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1)_0%,transparent_40%)]" />
-          
-          <div className="relative z-10 p-6 sm:p-8 lg:p-12">
-            <div className="text-center mb-8 sm:mb-12">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-4 py-1.5 text-xs sm:text-sm font-medium text-white mb-4">
-                <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-white" />
-                Patient Testimonials
+        <section className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6 sm:p-8 lg:p-12 animate-fade-in stagger-7">
+          <div className="text-center mb-8 sm:mb-12">
+            <Quote className="h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto mb-3 sm:mb-4 opacity-50" />
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
+              What Our <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Patients Say</span>
+            </h2>
+          </div>
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3">
+            <div className="bg-background/80 backdrop-blur rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 border border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-xl group">
+              <div className="flex gap-1 mb-3 sm:mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-500 text-yellow-500" />
+                ))}
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-white">
-                Trusted by <span className="text-white/90">Thousands</span>
-              </h2>
-              <p className="text-white/80 max-w-2xl mx-auto text-sm sm:text-base">
-                Real stories from real patients who found healing through homeopathy
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic leading-relaxed">
+                "After years of struggling with chronic migraines, homeopathic treatment gave me my life back. The personalized care and natural approach made all the difference."
               </p>
+              <p className="font-semibold text-xs sm:text-sm">- Priya S.</p>
             </div>
-            
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3">
-              {/* Testimonial 1 */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-white/10 rounded-xl sm:rounded-2xl blur-xl group-hover:bg-white/20 transition-all duration-500" />
-                <div className="relative bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 border border-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-1">
-                  <Quote className="h-8 w-8 text-white/30 mb-3" />
-                  <div className="flex gap-1 mb-3 sm:mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm sm:text-base text-white/90 mb-4 leading-relaxed">
-                    "After years of struggling with chronic migraines, homeopathic treatment gave me my life back. The personalized care made all the difference."
-                  </p>
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                      P
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white text-sm">Priya Sharma</p>
-                      <p className="text-white/60 text-xs">Patient since 2022</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-background/80 backdrop-blur rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 border border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-xl group">
+              <div className="flex gap-1 mb-3 sm:mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-500 text-yellow-500" />
+                ))}
               </div>
-              
-              {/* Testimonial 2 - Featured */}
-              <div className="relative group md:-mt-4 md:mb-4">
-                <div className="absolute inset-0 bg-white/20 rounded-xl sm:rounded-2xl blur-xl group-hover:bg-white/30 transition-all duration-500" />
-                <div className="relative bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                  <Quote className="h-8 w-8 text-primary/30 mb-3" />
-                  <div className="flex gap-1 mb-3 sm:mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-500 text-yellow-500" />
-                    ))}
-                  </div>
-                  <p className="text-sm sm:text-base text-foreground mb-4 leading-relaxed">
-                    "My daughter's recurring respiratory problems are now completely under control thanks to homeopathy. No more antibiotics and side effects!"
-                  </p>
-                  <div className="flex items-center gap-3 pt-3 border-t border-border">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      R
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">Rajesh Kumar</p>
-                      <p className="text-muted-foreground text-xs">Patient since 2021</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Testimonial 3 */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-white/10 rounded-xl sm:rounded-2xl blur-xl group-hover:bg-white/20 transition-all duration-500" />
-                <div className="relative bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 border border-white/20 hover:border-white/40 transition-all duration-300 hover:-translate-y-1">
-                  <Quote className="h-8 w-8 text-white/30 mb-3" />
-                  <div className="flex gap-1 mb-3 sm:mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm sm:text-base text-white/90 mb-4 leading-relaxed">
-                    "The doctor takes time to understand every aspect of my health. The holistic approach helped me overcome anxiety naturally."
-                  </p>
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                      A
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white text-sm">Anjali Mehta</p>
-                      <p className="text-white/60 text-xs">Patient since 2023</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic leading-relaxed">
+                "My daughter's recurring respiratory problems are now completely under control thanks to homeopathy. No more antibiotics and side effects!"
+              </p>
+              <p className="font-semibold text-xs sm:text-sm">- Rajesh K.</p>
             </div>
-            
-            {/* Trust badges */}
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 mt-8 sm:mt-12 pt-8 border-t border-white/10">
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white">4.9/5</div>
-                <p className="text-white/60 text-xs sm:text-sm">Average Rating</p>
+            <div className="bg-background/80 backdrop-blur rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-7 border border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-xl group">
+              <div className="flex gap-1 mb-3 sm:mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-500 text-yellow-500" />
+                ))}
               </div>
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white">500+</div>
-                <p className="text-white/60 text-xs sm:text-sm">Happy Reviews</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white">98%</div>
-                <p className="text-white/60 text-xs sm:text-sm">Satisfaction Rate</p>
-              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 italic leading-relaxed">
+                "The doctor takes time to understand every aspect of my health. The holistic approach helped me overcome anxiety naturally."
+              </p>
+              <p className="font-semibold text-xs sm:text-sm">- Anjali M.</p>
             </div>
           </div>
         </section>
