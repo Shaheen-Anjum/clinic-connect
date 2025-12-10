@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import MyBooking from "./pages/MyBooking";
+import Book from "./pages/Book";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Clinics from "./pages/Clinics";
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/my-booking" element={<MyBooking />} />
+              <Route path="/book/:slotType" element={<Book />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

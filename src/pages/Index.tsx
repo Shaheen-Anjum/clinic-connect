@@ -1,5 +1,5 @@
 import { Header } from '@/components/Header';
-import { BookingCard } from '@/components/BookingCard';
+import { HomeBookingCard } from '@/components/HomeBookingCard';
 import { Stethoscope, Leaf, Heart, Shield, Users, Sparkles, Clock, Award, TrendingUp, CheckCircle2, Quote, Star, MapPin, Phone, Mail } from 'lucide-react';
 
 const Index = () => {
@@ -43,10 +43,10 @@ const Index = () => {
         {/* Booking Cards */}
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="animate-fade-in stagger-1 transform transition-all duration-300 hover:scale-[1.02]">
-            <BookingCard slotType="morning" />
+            <HomeBookingCard slotType="morning" />
           </div>
           <div className="animate-fade-in stagger-2 transform transition-all duration-300 hover:scale-[1.02]">
-            <BookingCard slotType="evening" />
+            <HomeBookingCard slotType="evening" />
           </div>
         </section>
 
