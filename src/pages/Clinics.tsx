@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, Sun, Moon, Navigation, Wifi, Car, Accessibility, Coffee, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Sun, Moon, Navigation, Wifi, ParkingCircle, Armchair, Stethoscope, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ClinicSettings {
@@ -192,18 +192,54 @@ const Clinics = () => {
           <h2 className="text-2xl font-display font-bold text-center">
             Clinic <span className="text-primary">Facilities</span>
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { icon: Wifi, label: 'Free WiFi' },
-              { icon: Car, label: 'Parking Available' },
-              { icon: Accessibility, label: 'Wheelchair Access' },
-              { icon: Coffee, label: 'Waiting Lounge' },
-            ].map((facility, index) => (
-              <Card key={index} className="text-center p-4 hover:shadow-md transition-shadow">
-                <facility.icon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="text-sm font-medium text-foreground">{facility.label}</p>
-              </Card>
-            ))}
+          <div className="grid gap-6 md:grid-cols-4">
+            <Card className="bg-gradient-card border shadow-card">
+              <CardContent className="pt-6 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <Wifi className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-semibold">Free WiFi</h3>
+                <p className="text-sm text-muted-foreground">
+                  Stay connected while you wait with our complimentary high-speed WiFi.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-card border shadow-card">
+              <CardContent className="pt-6 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <ParkingCircle className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-semibold">Parking Available</h3>
+                <p className="text-sm text-muted-foreground">
+                  Convenient parking space available for all patients.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-card border shadow-card">
+              <CardContent className="pt-6 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <Armchair className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-semibold">Waiting Lounge</h3>
+                <p className="text-sm text-muted-foreground">
+                  Comfortable seating area with refreshments for your convenience.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-card border shadow-card">
+              <CardContent className="pt-6 text-center space-y-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                  <Stethoscope className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-semibold">Modern Equipment</h3>
+                <p className="text-sm text-muted-foreground">
+                  State-of-the-art diagnostic and treatment equipment.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
       </main>
