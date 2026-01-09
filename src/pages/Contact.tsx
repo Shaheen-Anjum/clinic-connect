@@ -1,12 +1,68 @@
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, Clock, MessageCircle } from 'lucide-react';
+import { Phone, Mail, Clock, MessageCircle, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ClinicSettings {
+  phone_number: string;
+  email: string;
+  whatsapp_number: string;
+  morning_clinic_name: string;
+  morning_start_time: string;
+  morning_end_time: string;
+  morning_booking_open_time: string;
+  evening_clinic_name: string;
+  evening_start_time: string;
+  evening_end_time: string;
+  evening_booking_open_time: string;
+}
 
 const Contact = () => {
-  const phoneNumber = "+91 XXXXX XXXXX"; // Replace with actual number
-  const email = "clinic@homeoclinic.com"; // Replace with actual email
-  const whatsappNumber = "91XXXXXXXXXX"; // Replace with actual WhatsApp number
+  const [settings, setSettings] = useState<ClinicSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching clinic settings:', error);
+      } else if (data) {
+        setSettings(data);
+      }
+      setIsLoading(false);
+    };
+
+    fetchSettings();
+  }, []);
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minutes} ${ampm}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  const phoneNumber = settings?.phone_number || "+91 XXXXX XXXXX";
+  const email = settings?.email || "clinic@example.com";
+  const whatsappNumber = settings?.whatsapp_number || "91XXXXXXXXXX";
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,15 +150,23 @@ const Contact = () => {
               <div className="grid gap-4 md:grid-cols-2 max-w-2xl mx-auto">
                 <div className="rounded-xl bg-morning-light p-6 text-center border border-morning/20">
                   <h3 className="font-display text-lg font-semibold text-morning mb-2">Morning Session</h3>
-                  <p className="text-2xl font-bold text-foreground">10:00 AM - 1:00 PM</p>
-                  <p className="text-sm text-muted-foreground mt-2">Clinic A (Morning Location)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Booking opens at 9:00 AM</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {settings ? `${formatTime(settings.morning_start_time)} - ${formatTime(settings.morning_end_time)}` : "10:00 AM - 1:00 PM"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">{settings?.morning_clinic_name || "Morning Clinic"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Booking opens at {settings ? formatTime(settings.morning_booking_open_time) : "9:00 AM"}
+                  </p>
                 </div>
                 <div className="rounded-xl bg-evening-light p-6 text-center border border-evening/20">
                   <h3 className="font-display text-lg font-semibold text-evening mb-2">Evening Session</h3>
-                  <p className="text-2xl font-bold text-foreground">5:00 PM - 8:00 PM</p>
-                  <p className="text-sm text-muted-foreground mt-2">Clinic B (Evening Location)</p>
-                  <p className="text-xs text-muted-foreground mt-1">Booking opens at 6:00 PM</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {settings ? `${formatTime(settings.evening_start_time)} - ${formatTime(settings.evening_end_time)}` : "5:00 PM - 8:00 PM"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">{settings?.evening_clinic_name || "Evening Clinic"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Booking opens at {settings ? formatTime(settings.evening_booking_open_time) : "6:00 PM"}
+                  </p>
                 </div>
               </div>
             </CardContent>
