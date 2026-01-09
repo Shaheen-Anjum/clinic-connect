@@ -1,16 +1,70 @@
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, Sun, Moon, Navigation } from 'lucide-react';
-import { useBooking } from '@/context/BookingContext';
+import { MapPin, Clock, Sun, Moon, Navigation, Wifi, Car, Accessibility, Coffee, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ClinicSettings {
+  morning_clinic_name: string;
+  morning_clinic_address: string;
+  morning_start_time: string;
+  morning_end_time: string;
+  morning_booking_open_time: string;
+  morning_booking_close_time: string;
+  evening_clinic_name: string;
+  evening_clinic_address: string;
+  evening_start_time: string;
+  evening_end_time: string;
+  evening_booking_open_time: string;
+  evening_booking_close_time: string;
+}
 
 const Clinics = () => {
-  const { settings } = useBooking();
+  const [settings, setSettings] = useState<ClinicSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('clinic_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching clinic settings:', error);
+      } else if (data) {
+        setSettings(data);
+      }
+      setIsLoading(false);
+    };
+
+    fetchSettings();
+  }, []);
 
   const openInMaps = (address: string) => {
     const encodedAddress = encodeURIComponent(address);
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   };
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minutes} ${ampm}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +92,7 @@ const Clinics = () => {
                 <span className="font-medium">Morning Clinic</span>
               </div>
               <h2 className="font-display text-2xl font-bold text-primary-foreground">
-                {settings.morningClinic.name || "Clinic A"}
+                {settings?.morning_clinic_name || "Morning Clinic"}
               </h2>
             </div>
             <CardContent className="p-6 space-y-6">
@@ -49,7 +103,7 @@ const Clinics = () => {
                 <div>
                   <h3 className="font-semibold text-foreground">Address</h3>
                   <p className="text-muted-foreground">
-                    {settings.morningClinic.address || "Address not specified. Please check admin settings."}
+                    {settings?.morning_clinic_address || "Address not specified"}
                   </p>
                 </div>
               </div>
@@ -61,10 +115,10 @@ const Clinics = () => {
                 <div>
                   <h3 className="font-semibold text-foreground">Timing</h3>
                   <p className="text-muted-foreground">
-                    {settings.morningClinic.startTime} - {settings.morningClinic.endTime}
+                    {settings ? `${formatTime(settings.morning_start_time)} - ${formatTime(settings.morning_end_time)}` : "Not specified"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Booking opens at {settings.morningClinic.bookingOpenTime}
+                    Booking: {settings ? `${formatTime(settings.morning_booking_open_time)} - ${formatTime(settings.morning_booking_close_time)}` : "Not specified"}
                   </p>
                 </div>
               </div>
@@ -72,7 +126,8 @@ const Clinics = () => {
               <Button 
                 variant="morning" 
                 className="w-full gap-2"
-                onClick={() => openInMaps(settings.morningClinic.address || "Clinic A")}
+                onClick={() => openInMaps(settings?.morning_clinic_address || "")}
+                disabled={!settings?.morning_clinic_address}
               >
                 <Navigation className="h-4 w-4" />
                 Get Directions
@@ -88,7 +143,7 @@ const Clinics = () => {
                 <span className="font-medium">Evening Clinic</span>
               </div>
               <h2 className="font-display text-2xl font-bold text-primary-foreground">
-                {settings.eveningClinic.name || "Clinic B"}
+                {settings?.evening_clinic_name || "Evening Clinic"}
               </h2>
             </div>
             <CardContent className="p-6 space-y-6">
@@ -99,7 +154,7 @@ const Clinics = () => {
                 <div>
                   <h3 className="font-semibold text-foreground">Address</h3>
                   <p className="text-muted-foreground">
-                    {settings.eveningClinic.address || "Address not specified. Please check admin settings."}
+                    {settings?.evening_clinic_address || "Address not specified"}
                   </p>
                 </div>
               </div>
@@ -111,10 +166,10 @@ const Clinics = () => {
                 <div>
                   <h3 className="font-semibold text-foreground">Timing</h3>
                   <p className="text-muted-foreground">
-                    {settings.eveningClinic.startTime} - {settings.eveningClinic.endTime}
+                    {settings ? `${formatTime(settings.evening_start_time)} - ${formatTime(settings.evening_end_time)}` : "Not specified"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Booking opens at {settings.eveningClinic.bookingOpenTime}
+                    Booking: {settings ? `${formatTime(settings.evening_booking_open_time)} - ${formatTime(settings.evening_booking_close_time)}` : "Not specified"}
                   </p>
                 </div>
               </div>
@@ -122,7 +177,8 @@ const Clinics = () => {
               <Button 
                 variant="evening" 
                 className="w-full gap-2"
-                onClick={() => openInMaps(settings.eveningClinic.address || "Clinic B")}
+                onClick={() => openInMaps(settings?.evening_clinic_address || "")}
+                disabled={!settings?.evening_clinic_address}
               >
                 <Navigation className="h-4 w-4" />
                 Get Directions
@@ -131,38 +187,31 @@ const Clinics = () => {
           </Card>
         </section>
 
-        {/* Facilities */}
-        <section className="rounded-2xl bg-gradient-card border p-8 animate-fade-in stagger-2">
-          <h2 className="font-display text-2xl font-bold text-center mb-6">Clinic Facilities</h2>
-          <div className="grid gap-4 md:grid-cols-4 text-center">
-            <div className="p-4">
-              <p className="text-2xl mb-2">🏥</p>
-              <p className="font-medium">Clean & Hygienic</p>
-              <p className="text-sm text-muted-foreground">Sanitized environment</p>
-            </div>
-            <div className="p-4">
-              <p className="text-2xl mb-2">♿</p>
-              <p className="font-medium">Accessible</p>
-              <p className="text-sm text-muted-foreground">Wheelchair friendly</p>
-            </div>
-            <div className="p-4">
-              <p className="text-2xl mb-2">🅿️</p>
-              <p className="font-medium">Parking</p>
-              <p className="text-sm text-muted-foreground">Available nearby</p>
-            </div>
-            <div className="p-4">
-              <p className="text-2xl mb-2">🌡️</p>
-              <p className="font-medium">Air Conditioned</p>
-              <p className="text-sm text-muted-foreground">Comfortable waiting area</p>
-            </div>
+        {/* Facilities Section */}
+        <section className="space-y-6 animate-fade-in stagger-2">
+          <h2 className="text-2xl font-display font-bold text-center">
+            Clinic <span className="text-primary">Facilities</span>
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: Wifi, label: 'Free WiFi' },
+              { icon: Car, label: 'Parking Available' },
+              { icon: Accessibility, label: 'Wheelchair Access' },
+              { icon: Coffee, label: 'Waiting Lounge' },
+            ].map((facility, index) => (
+              <Card key={index} className="text-center p-4 hover:shadow-md transition-shadow">
+                <facility.icon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="text-sm font-medium text-foreground">{facility.label}</p>
+              </Card>
+            ))}
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-16">
-        <div className="container py-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} HomeoClinic. All rights reserved.</p>
+      <footer className="bg-muted/50 py-8 mt-12">
+        <div className="container text-center text-muted-foreground">
+          <p>© 2024 Homeopathy Clinic. All rights reserved.</p>
         </div>
       </footer>
     </div>
