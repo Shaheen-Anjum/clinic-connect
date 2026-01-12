@@ -1,6 +1,7 @@
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { HomeBookingCard } from '@/components/HomeBookingCard';
-import { Stethoscope, Leaf, Heart, Shield, Users, Sparkles, Clock, Award, TrendingUp, CheckCircle2, Quote, Star, MapPin, Phone, Mail } from 'lucide-react';
+import { Stethoscope, Leaf, Heart, Shield, Users, Sparkles, Clock, Award, TrendingUp, CheckCircle2, Quote, Star } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -326,84 +327,7 @@ const Index = () => {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="relative mt-12 sm:mt-16 overflow-hidden">
-        {/* Top wave decoration */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        
-        <div className="bg-gradient-to-b from-card via-card to-primary/5">
-          <div className="container py-10 sm:py-16 px-4">
-            <div className="grid gap-8 sm:gap-12 grid-cols-1 md:grid-cols-3 lg:grid-cols-4">
-              {/* Brand Section */}
-              <div className="md:col-span-1 lg:col-span-2 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Leaf className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className="font-display text-xl sm:text-2xl font-bold">HomeoClinic</span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-                  Dedicated to providing natural, holistic healthcare through the science of homeopathy. 
-                  Your wellness journey begins here.
-                </p>
-                <div className="flex gap-3 pt-2">
-                  <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                    <Phone className="h-4 w-4" />
-                  </a>
-                  <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                    <Mail className="h-4 w-4" />
-                  </a>
-                  <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                    <MapPin className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-              
-              {/* Quick Links */}
-              <div className="space-y-4">
-                <h3 className="font-display font-bold text-sm uppercase tracking-wider text-primary">Quick Links</h3>
-                <ul className="space-y-2">
-                  <li><a href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">Home</a></li>
-                  <li><a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About Us</a></li>
-                  <li><a href="/clinics" className="text-sm text-muted-foreground hover:text-primary transition-colors">Our Clinics</a></li>
-                  <li><a href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
-                </ul>
-              </div>
-              
-              {/* Clinic Hours */}
-              <div className="space-y-4">
-                <h3 className="font-display font-bold text-sm uppercase tracking-wider text-primary">Clinic Hours</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex justify-between gap-4">
-                    <span>Morning</span>
-                    <span className="font-medium text-foreground">10:00 AM - 1:00 PM</span>
-                  </li>
-                  <li className="flex justify-between gap-4">
-                    <span>Evening</span>
-                    <span className="font-medium text-foreground">5:00 PM - 8:00 PM</span>
-                  </li>
-                  <li className="flex justify-between gap-4">
-                    <span>Sunday</span>
-                    <span className="font-medium text-muted-foreground">Closed</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Bottom Bar */}
-            <div className="mt-10 sm:mt-12 pt-6 border-t border-border/50">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  © {new Date().getFullYear()} HomeoClinic. All rights reserved.
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-                  Made with <Heart className="h-3 w-3 text-red-500 fill-red-500" /> for your wellness
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Award, BookOpen, Heart, Stethoscope, GraduationCap, Users } from 'lucide-react';
 
@@ -118,12 +119,7 @@ const About = () => {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t mt-16">
-        <div className="container py-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} HomeoClinic. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

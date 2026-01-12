@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, Clock, MessageCircle, Loader2 } from 'lucide-react';
@@ -184,12 +185,7 @@ const Contact = () => {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t mt-16">
-        <div className="container py-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} HomeoClinic. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
