@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import { MinimalFooter } from '@/components/MinimalFooter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Sun, Moon, Navigation, Wifi, ParkingCircle, Armchair, Stethoscope, Loader2 } from 'lucide-react';
@@ -245,7 +245,7 @@ const Clinics = () => {
         </section>
       </main>
 
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 };
