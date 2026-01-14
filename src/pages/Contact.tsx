@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import { MinimalFooter } from '@/components/MinimalFooter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, Clock, MessageCircle, Loader2 } from 'lucide-react';
@@ -185,7 +185,7 @@ const Contact = () => {
         </section>
       </main>
 
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 };

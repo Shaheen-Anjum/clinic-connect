@@ -1,5 +1,5 @@
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import { MinimalFooter } from '@/components/MinimalFooter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Award, BookOpen, Heart, Stethoscope, GraduationCap, Users } from 'lucide-react';
 
@@ -119,7 +119,7 @@ const About = () => {
         </section>
       </main>
 
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 };
