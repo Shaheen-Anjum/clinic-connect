@@ -19,7 +19,7 @@ export function Footer() {
       
       {/* Main footer content */}
       <div className="bg-gradient-to-b from-card via-card/95 to-primary/5">
-        <div className="container py-12 sm:py-16 px-4">
+        <div className="w-[85%] mx-auto py-12 sm:py-16 px-4">
           <div className="grid gap-10 sm:gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             
             {/* Brand Section */}
