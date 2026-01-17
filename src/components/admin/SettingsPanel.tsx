@@ -116,7 +116,7 @@ interface TimeRowProps {
 
 function TimeRow({ label, value, onChange }: TimeRowProps) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-1">
       <span className="text-sm text-muted-foreground">{label}</span>
       <SimpleTimePicker value={value} onChange={onChange} />
     </div>
@@ -238,13 +238,13 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Minutes per Patient */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="py-3 pb-2">
           <CardTitle className="text-base font-medium">Consultation Time</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 pb-3">
           <div className="flex items-center gap-3">
             <Label className="text-sm text-muted-foreground">Minutes per patient</Label>
             <Select 
@@ -266,20 +266,20 @@ export function SettingsPanel() {
 
       {/* Morning Clinic */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="py-3 pb-2">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Sun className="h-4 w-4 text-amber-500" />
             Morning Clinic
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="space-y-3 pt-0 pb-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs text-muted-foreground">Clinic Name</Label>
               <Input
                 value={formData.morning_clinic_name}
                 onChange={(e) => updateFormData({ morning_clinic_name: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-8"
               />
             </div>
             <div>
@@ -287,13 +287,13 @@ export function SettingsPanel() {
               <Input
                 value={formData.morning_clinic_address}
                 onChange={(e) => updateFormData({ morning_clinic_address: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-8"
               />
             </div>
           </div>
           
-          <div className="border-t pt-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Clinic Hours</p>
+          <div className="border-t pt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Clinic Hours</p>
             <TimeRow 
               label="Opens at" 
               value={formData.morning_start_time} 
@@ -306,8 +306,8 @@ export function SettingsPanel() {
             />
           </div>
 
-          <div className="border-t pt-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Booking Window</p>
+          <div className="border-t pt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Booking Window</p>
             <TimeRow 
               label="Booking opens" 
               value={formData.morning_booking_open_time} 
@@ -324,20 +324,20 @@ export function SettingsPanel() {
 
       {/* Evening Clinic */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="py-3 pb-2">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Moon className="h-4 w-4 text-indigo-500" />
             Evening Clinic
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="space-y-3 pt-0 pb-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs text-muted-foreground">Clinic Name</Label>
               <Input
                 value={formData.evening_clinic_name}
                 onChange={(e) => updateFormData({ evening_clinic_name: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-8"
               />
             </div>
             <div>
@@ -345,13 +345,13 @@ export function SettingsPanel() {
               <Input
                 value={formData.evening_clinic_address}
                 onChange={(e) => updateFormData({ evening_clinic_address: e.target.value })}
-                className="mt-1 h-9"
+                className="mt-1 h-8"
               />
             </div>
           </div>
           
-          <div className="border-t pt-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Clinic Hours</p>
+          <div className="border-t pt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Clinic Hours</p>
             <TimeRow 
               label="Opens at" 
               value={formData.evening_start_time} 
@@ -364,8 +364,8 @@ export function SettingsPanel() {
             />
           </div>
 
-          <div className="border-t pt-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Booking Window</p>
+          <div className="border-t pt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Booking Window</p>
             <TimeRow 
               label="Booking opens" 
               value={formData.evening_booking_open_time} 
