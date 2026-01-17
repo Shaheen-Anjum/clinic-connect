@@ -34,7 +34,7 @@ interface ClinicSettings {
 
 export function BookingCard({ slotType }: BookingCardProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isStaff } = useAuth();
   const navigate = useNavigate();
   
   const [mobileNumber, setMobileNumber] = useState('');
@@ -243,6 +243,16 @@ export function BookingCard({ slotType }: BookingCardProps) {
       return;
     }
 
+    // Staff must provide patient name
+    if (isStaff && !patientName.trim()) {
+      toast({
+        title: "Patient Name Required",
+        description: "Please enter the patient's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!captchaChecked) {
       toast({
         title: "Verification Required",
@@ -254,16 +264,18 @@ export function BookingCard({ slotType }: BookingCardProps) {
 
     setIsSubmitting(true);
 
-    // Check if already booked
-    const alreadyBooked = await hasBookedToday(mobileNumber);
-    if (alreadyBooked) {
-      toast({
-        title: "Already Booked",
-        description: "You have already booked a slot today. Please visit at your scheduled time.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
+    // Check if already booked (skip for staff booking on behalf of patients)
+    if (!isStaff) {
+      const alreadyBooked = await hasBookedToday(mobileNumber);
+      if (alreadyBooked) {
+        toast({
+          title: "Already Booked",
+          description: "You have already booked a slot today. Please visit at your scheduled time.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Get current queue count for this slot
@@ -378,8 +390,11 @@ export function BookingCard({ slotType }: BookingCardProps) {
     return estimatedTime;
   };
 
-  // Show existing booking info if user has already booked
-  if (existingBooking && user) {
+  // Staff (doctor/receptionist) can always book for patients - skip existing booking check
+  const shouldShowBookingForm = isStaff;
+
+  // Show existing booking info if user has already booked (but not for staff)
+  if (existingBooking && user && !shouldShowBookingForm) {
     const isBookingMorning = existingBooking.slotType === 'morning';
     const isMatchingSlot = (isMorning && isBookingMorning) || (!isMorning && !isBookingMorning);
 
@@ -554,8 +569,16 @@ export function BookingCard({ slotType }: BookingCardProps) {
 
         {bookingOpen && (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isStaff && (
+              <div className="rounded-lg bg-primary/10 p-3 mb-2">
+                <p className="text-sm font-medium text-primary">
+                  Booking on behalf of a patient
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label htmlFor={`mobile-${slotType}`}>Mobile Number *</Label>
+              <Label htmlFor={`mobile-${slotType}`}>Patient Mobile Number *</Label>
               <Input
                 id={`mobile-${slotType}`}
                 type="tel"
@@ -568,13 +591,14 @@ export function BookingCard({ slotType }: BookingCardProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`name-${slotType}`}>Patient Name (Optional)</Label>
+              <Label htmlFor={`name-${slotType}`}>Patient Name {isStaff ? '*' : '(Optional)'}</Label>
               <Input
                 id={`name-${slotType}`}
                 type="text"
                 placeholder="Enter patient name"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
+                required={isStaff}
               />
             </div>
 
