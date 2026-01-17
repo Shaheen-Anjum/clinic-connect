@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Sun, Moon, MapPin, Clock, AlertCircle, Loader2, Eye, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface HomeBookingCardProps {
   slotType: 'morning' | 'evening';
@@ -32,6 +33,7 @@ interface ClinicSettings {
 export function HomeBookingCard({ slotType }: HomeBookingCardProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [existingBooking, setExistingBooking] = useState<{ slotType: string } | null>(null);
   const [settings, setSettings] = useState<ClinicSettings | null>(null);
@@ -280,7 +282,18 @@ export function HomeBookingCard({ slotType }: HomeBookingCardProps) {
               variant={isMorning ? 'morning' : 'evening'}
               size="lg"
               className="w-full"
-              onClick={() => navigate(`/book/${slotType}`)}
+              onClick={() => {
+                if (!user) {
+                  toast({
+                    title: "Login Required",
+                    description: "Please login to book an appointment.",
+                    variant: "destructive",
+                  });
+                  navigate('/auth');
+                  return;
+                }
+                navigate(`/book/${slotType}`);
+              }}
             >
               <CalendarPlus className="h-5 w-5 mr-2" />
               Book Now
