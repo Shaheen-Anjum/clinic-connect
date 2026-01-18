@@ -115,6 +115,23 @@ const Auth = () => {
 
     setIsSubmitting(true);
 
+    // Check if phone number is already registered
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('phone', signupData.phone)
+      .maybeSingle();
+
+    if (existingProfile) {
+      toast({
+        title: "Phone Already Registered",
+        description: "This phone number is already associated with another account. Please use a different number or login.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     const selectedRole = asDoctor ? 'doctor' : 'patient';
 
     const { error } = await signUp(
