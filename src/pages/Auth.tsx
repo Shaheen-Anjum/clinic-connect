@@ -19,10 +19,20 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
-  email: z.string().trim().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  fullName: z.string().trim().min(1, { message: "Name is required" }).max(100),
-  phone: z.string().trim().min(10, { message: "Valid phone number required" }).max(15),
+  email: z.string().trim().toLowerCase().email({ message: "Invalid email address" }).max(255, { message: "Email too long" }),
+  password: z.string()
+    .min(6, { message: "Password must be at least 6 characters" })
+    .max(50, { message: "Password too long" })
+    .regex(/[a-zA-Z]/, { message: "Password must contain at least one letter" })
+    .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+  fullName: z.string()
+    .trim()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name too long" })
+    .regex(/^[a-zA-Z\s.'-]+$/, { message: "Name can only contain letters, spaces, dots, apostrophes and hyphens" }),
+  phone: z.string()
+    .trim()
+    .regex(/^[0-9]{10}$/, { message: "Phone must be exactly 10 digits" }),
 });
 
 const Auth = () => {
@@ -255,8 +265,12 @@ const Auth = () => {
                         type="text"
                         placeholder="Enter your full name"
                         value={signupData.fullName}
-                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^a-zA-Z\s.'-]/g, '');
+                          setSignupData({ ...signupData, fullName: value });
+                        }}
                         className="pl-10"
+                        maxLength={100}
                         required
                       />
                     </div>
@@ -269,10 +283,14 @@ const Auth = () => {
                       <Input
                         id="signup-phone"
                         type="tel"
-                        placeholder="Enter your phone number"
+                        placeholder="10 digit mobile number"
                         value={signupData.phone}
-                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setSignupData({ ...signupData, phone: value });
+                        }}
                         className="pl-10"
+                        maxLength={10}
                         required
                       />
                     </div>
@@ -301,10 +319,11 @@ const Auth = () => {
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="Create a password (min 6 characters)"
+                        placeholder="Min 6 chars, letter + number"
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         className="pl-10"
+                        maxLength={50}
                         required
                       />
                     </div>
