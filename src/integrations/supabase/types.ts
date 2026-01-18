@@ -210,6 +210,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_staff_phone: { Args: { _phone: string }; Returns: boolean }
       no_doctors_exist: { Args: never; Returns: boolean }
     }
     Enums: {

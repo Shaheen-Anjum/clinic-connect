@@ -48,6 +48,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
   const [queueCount, setQueueCount] = useState(0);
   const [currentPosition, setCurrentPosition] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [userPhone, setUserPhone] = useState<string | null>(null);
 
   const isMorning = slotType === 'morning';
 
@@ -83,41 +84,50 @@ export function BookingCard({ slotType }: BookingCardProps) {
     if (user) {
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, full_name')
         .eq('id', user.id)
         .maybeSingle();
 
       if (profileData?.phone) {
-        const { data: existingBookingData } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('phone', profileData.phone)
-          .eq('booking_date', today)
-          .neq('status', 'consulted')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        setUserPhone(profileData.phone);
+        // Pre-fill patient name for non-staff users
+        if (!isStaff && profileData.full_name) {
+          setPatientName(profileData.full_name);
+        }
 
-        if (existingBookingData) {
-          setExistingBooking({
-            queueNumber: existingBookingData.queue_number,
-            slotType: existingBookingData.slot_type,
-            patientName: existingBookingData.patient_name,
-            createdAt: existingBookingData.created_at,
-          });
-
-          // Calculate current position
-          const { data: waitingPatients } = await supabase
+        // Only check for existing bookings for non-staff users
+        if (!isStaff) {
+          const { data: existingBookingData } = await supabase
             .from('bookings')
-            .select('queue_number')
+            .select('*')
+            .eq('phone', profileData.phone)
             .eq('booking_date', today)
-            .eq('slot_type', existingBookingData.slot_type)
-            .eq('status', 'waiting')
-            .lt('queue_number', existingBookingData.queue_number);
+            .neq('status', 'consulted')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-          setCurrentPosition((waitingPatients?.length || 0) + 1);
-        } else {
-          setExistingBooking(null);
+          if (existingBookingData) {
+            setExistingBooking({
+              queueNumber: existingBookingData.queue_number,
+              slotType: existingBookingData.slot_type,
+              patientName: existingBookingData.patient_name,
+              createdAt: existingBookingData.created_at,
+            });
+
+            // Calculate current position
+            const { data: waitingPatients } = await supabase
+              .from('bookings')
+              .select('queue_number')
+              .eq('booking_date', today)
+              .eq('slot_type', existingBookingData.slot_type)
+              .eq('status', 'waiting')
+              .lt('queue_number', existingBookingData.queue_number);
+
+            setCurrentPosition((waitingPatients?.length || 0) + 1);
+          } else {
+            setExistingBooking(null);
+          }
         }
       }
     }
@@ -233,8 +243,12 @@ export function BookingCard({ slotType }: BookingCardProps) {
       navigate('/auth');
       return;
     }
+
+    // Determine the phone number to use
+    const phoneToUse = isStaff ? mobileNumber : userPhone;
     
-    if (!mobileNumber || mobileNumber.length < 10) {
+    // Staff must provide mobile number
+    if (isStaff && (!mobileNumber || mobileNumber.length < 10)) {
       toast({
         title: "Invalid Mobile Number",
         description: "Please enter a valid 10-digit mobile number.",
@@ -253,6 +267,16 @@ export function BookingCard({ slotType }: BookingCardProps) {
       return;
     }
 
+    // Patient must provide name
+    if (!isStaff && !patientName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!captchaChecked) {
       toast({
         title: "Verification Required",
@@ -264,9 +288,35 @@ export function BookingCard({ slotType }: BookingCardProps) {
 
     setIsSubmitting(true);
 
-    // Check if already booked (skip for staff booking on behalf of patients)
-    if (!isStaff) {
+    // Staff booking: validate that the phone number is not a staff member's number
+    if (isStaff) {
+      const { data: isStaffPhone } = await supabase.rpc('is_staff_phone', { _phone: mobileNumber });
+      if (isStaffPhone) {
+        toast({
+          title: "Invalid Phone Number",
+          description: "Staff phone numbers cannot be used for patient bookings.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Also check if this patient already has a booking today
       const alreadyBooked = await hasBookedToday(mobileNumber);
+      if (alreadyBooked) {
+        toast({
+          title: "Already Booked",
+          description: "This patient has already booked a slot today.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // Check if patient already booked (for regular patients)
+    if (!isStaff && phoneToUse) {
+      const alreadyBooked = await hasBookedToday(phoneToUse);
       if (alreadyBooked) {
         toast({
           title: "Already Booked",
@@ -291,11 +341,12 @@ export function BookingCard({ slotType }: BookingCardProps) {
     const nextQueueNumber = (existingBookings?.[0]?.queue_number || 0) + 1;
 
     // Create booking
+    const finalPhone = isStaff ? mobileNumber : userPhone;
     const { data: newBooking, error } = await supabase
       .from('bookings')
       .insert({
-        patient_name: patientName || 'Guest Patient',
-        phone: mobileNumber,
+        patient_name: patientName,
+        phone: finalPhone,
         slot_type: slotType,
         queue_number: nextQueueNumber,
         booking_date: today,
@@ -577,28 +628,31 @@ export function BookingCard({ slotType }: BookingCardProps) {
               </div>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor={`mobile-${slotType}`}>Patient Mobile Number *</Label>
-              <Input
-                id={`mobile-${slotType}`}
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                maxLength={10}
-                required
-              />
-            </div>
+            {/* Only show mobile number field for staff */}
+            {isStaff && (
+              <div className="space-y-2">
+                <Label htmlFor={`mobile-${slotType}`}>Patient Mobile Number *</Label>
+                <Input
+                  id={`mobile-${slotType}`}
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  maxLength={10}
+                  required
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
-              <Label htmlFor={`name-${slotType}`}>Patient Name {isStaff ? '*' : '(Optional)'}</Label>
+              <Label htmlFor={`name-${slotType}`}>Patient Name *</Label>
               <Input
                 id={`name-${slotType}`}
                 type="text"
                 placeholder="Enter patient name"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                required={isStaff}
+                required
               />
             </div>
 
@@ -618,7 +672,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
               variant={isMorning ? 'morning' : 'evening'}
               size="xl"
               className="w-full"
-              disabled={isSubmitting || !mobileNumber || !captchaChecked}
+              disabled={isSubmitting || (isStaff && !mobileNumber) || !patientName.trim() || !captchaChecked}
             >
               {isSubmitting ? (
                 <>
