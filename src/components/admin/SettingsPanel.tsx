@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { Save, Loader2, Sun, Moon } from 'lucide-react';
+import { Save, Loader2, Sun, Moon, Clock, MapPin, Building2, Timer } from 'lucide-react';
 
 interface ClinicSettings {
   id: string;
@@ -60,12 +59,12 @@ const convertTo24Hour = (hour: string, minute: string, period: 'AM' | 'PM'): str
   return `${h.toString().padStart(2, '0')}:${minute}`;
 };
 
-interface SimpleTimePickerProps {
+interface CompactTimePickerProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-function SimpleTimePicker({ value, onChange }: SimpleTimePickerProps) {
+function CompactTimePicker({ value, onChange }: CompactTimePickerProps) {
   const { hour, minute, period } = convertTo12Hour(value);
 
   const handleChange = (newHour: string, newMinute: string, newPeriod: 'AM' | 'PM') => {
@@ -73,52 +72,149 @@ function SimpleTimePicker({ value, onChange }: SimpleTimePickerProps) {
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5">
       <Select value={hour} onValueChange={(h) => handleChange(h, minute, period)}>
-        <SelectTrigger className="w-16 h-9 text-sm">
+        <SelectTrigger className="w-12 h-7 text-xs px-2 border-0 bg-muted/50">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((h) => (
-            <SelectItem key={h} value={h}>{h}</SelectItem>
+            <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <span className="text-muted-foreground">:</span>
+      <span className="text-muted-foreground text-xs">:</span>
       <Select value={minute} onValueChange={(m) => handleChange(hour, m, period)}>
-        <SelectTrigger className="w-16 h-9 text-sm">
+        <SelectTrigger className="w-12 h-7 text-xs px-2 border-0 bg-muted/50">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {['00', '15', '30', '45'].map((m) => (
-            <SelectItem key={m} value={m}>{m}</SelectItem>
+            <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
           ))}
         </SelectContent>
       </Select>
       <Select value={period} onValueChange={(p) => handleChange(hour, minute, p as 'AM' | 'PM')}>
-        <SelectTrigger className="w-16 h-9 text-sm">
+        <SelectTrigger className="w-12 h-7 text-xs px-2 border-0 bg-muted/50">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="AM">AM</SelectItem>
-          <SelectItem value="PM">PM</SelectItem>
+          <SelectItem value="AM" className="text-xs">AM</SelectItem>
+          <SelectItem value="PM" className="text-xs">PM</SelectItem>
         </SelectContent>
       </Select>
     </div>
   );
 }
 
-interface TimeRowProps {
+interface TimeRangeProps {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  startValue: string;
+  endValue: string;
+  onStartChange: (value: string) => void;
+  onEndChange: (value: string) => void;
 }
 
-function TimeRow({ label, value, onChange }: TimeRowProps) {
+function TimeRange({ label, startValue, endValue, onStartChange, onEndChange }: TimeRangeProps) {
   return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <SimpleTimePicker value={value} onChange={onChange} />
+    <div className="flex items-center justify-between gap-2 py-1.5">
+      <span className="text-xs text-muted-foreground font-medium min-w-[70px]">{label}</span>
+      <div className="flex items-center gap-1">
+        <CompactTimePicker value={startValue} onChange={onStartChange} />
+        <span className="text-muted-foreground text-xs px-1">–</span>
+        <CompactTimePicker value={endValue} onChange={onEndChange} />
+      </div>
+    </div>
+  );
+}
+
+interface ClinicSectionProps {
+  type: 'morning' | 'evening';
+  icon: React.ReactNode;
+  title: string;
+  clinicName: string;
+  clinicAddress: string;
+  startTime: string;
+  endTime: string;
+  bookingOpenTime: string;
+  bookingCloseTime: string;
+  onUpdate: (updates: Partial<FormSettings>) => void;
+}
+
+function ClinicSection({
+  type,
+  icon,
+  title,
+  clinicName,
+  clinicAddress,
+  startTime,
+  endTime,
+  bookingOpenTime,
+  bookingCloseTime,
+  onUpdate,
+}: ClinicSectionProps) {
+  const prefix = type === 'morning' ? 'morning' : 'evening';
+  const gradientClass = type === 'morning' ? 'from-morning/20 to-morning/5' : 'from-evening/20 to-evening/5';
+  const borderClass = type === 'morning' ? 'border-morning/30' : 'border-evening/30';
+  const iconBgClass = type === 'morning' ? 'bg-morning/10 text-morning' : 'bg-evening/10 text-evening';
+
+  return (
+    <div className={`rounded-xl border ${borderClass} bg-gradient-to-br ${gradientClass} overflow-hidden`}>
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
+        <div className={`p-1.5 rounded-lg ${iconBgClass}`}>
+          {icon}
+        </div>
+        <span className="font-medium text-sm">{title}</span>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {/* Clinic Info */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-muted-foreground" />
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Name</Label>
+            </div>
+            <Input
+              value={clinicName}
+              onChange={(e) => onUpdate({ [`${prefix}_clinic_name`]: e.target.value })}
+              className="h-7 text-xs"
+              placeholder="Clinic name"
+            />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-muted-foreground" />
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Address</Label>
+            </div>
+            <Input
+              value={clinicAddress}
+              onChange={(e) => onUpdate({ [`${prefix}_clinic_address`]: e.target.value })}
+              className="h-7 text-xs"
+              placeholder="Address"
+            />
+          </div>
+        </div>
+
+        {/* Time Settings */}
+        <div className="bg-background/60 rounded-lg p-2 space-y-0.5">
+          <TimeRange
+            label="Clinic Hours"
+            startValue={startTime}
+            endValue={endTime}
+            onStartChange={(v) => onUpdate({ [`${prefix}_start_time`]: v })}
+            onEndChange={(v) => onUpdate({ [`${prefix}_end_time`]: v })}
+          />
+          <TimeRange
+            label="Booking"
+            startValue={bookingOpenTime}
+            endValue={bookingCloseTime}
+            onStartChange={(v) => onUpdate({ [`${prefix}_booking_open_time`]: v })}
+            onEndChange={(v) => onUpdate({ [`${prefix}_booking_close_time`]: v })}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -219,173 +315,86 @@ export function SettingsPanel() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-12 flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
   if (!settings) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Failed to load settings.
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground text-sm">
+        Failed to load settings.
+      </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Minutes per Patient */}
-      <Card>
-        <CardHeader className="py-3 pb-2">
-          <CardTitle className="text-base font-medium">Consultation Time</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 pb-3">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground">Minutes per patient</Label>
-            <Select 
-              value={formData.minutes_per_patient.toString()} 
-              onValueChange={(v) => updateFormData({ minutes_per_patient: parseInt(v) })}
-            >
-              <SelectTrigger className="w-20 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[5, 7, 10, 12, 15, 20, 25, 30].map((m) => (
-                  <SelectItem key={m} value={m.toString()}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="space-y-3 max-w-2xl mx-auto">
+      {/* Consultation Time */}
+      <div className="flex items-center justify-between bg-card rounded-xl border p-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Timer className="h-4 w-4 text-primary" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <p className="text-sm font-medium">Consultation Duration</p>
+            <p className="text-[10px] text-muted-foreground">Time per patient</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select 
+            value={formData.minutes_per_patient.toString()} 
+            onValueChange={(v) => updateFormData({ minutes_per_patient: parseInt(v) })}
+          >
+            <SelectTrigger className="w-16 h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 7, 10, 12, 15, 20, 25, 30].map((m) => (
+                <SelectItem key={m} value={m.toString()}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-xs text-muted-foreground">min</span>
+        </div>
+      </div>
 
-      {/* Morning Clinic */}
-      <Card>
-        <CardHeader className="py-3 pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Sun className="h-4 w-4 text-amber-500" />
-            Morning Clinic
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-0 pb-3">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs text-muted-foreground">Clinic Name</Label>
-              <Input
-                value={formData.morning_clinic_name}
-                onChange={(e) => updateFormData({ morning_clinic_name: e.target.value })}
-                className="mt-1 h-8"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Address</Label>
-              <Input
-                value={formData.morning_clinic_address}
-                onChange={(e) => updateFormData({ morning_clinic_address: e.target.value })}
-                className="mt-1 h-8"
-              />
-            </div>
-          </div>
-          
-          <div className="border-t pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Clinic Hours</p>
-            <TimeRow 
-              label="Opens at" 
-              value={formData.morning_start_time} 
-              onChange={(v) => updateFormData({ morning_start_time: v })} 
-            />
-            <TimeRow 
-              label="Closes at" 
-              value={formData.morning_end_time} 
-              onChange={(v) => updateFormData({ morning_end_time: v })} 
-            />
-          </div>
+      {/* Clinic Sections Grid */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <ClinicSection
+          type="morning"
+          icon={<Sun className="h-4 w-4" />}
+          title="Morning"
+          clinicName={formData.morning_clinic_name}
+          clinicAddress={formData.morning_clinic_address}
+          startTime={formData.morning_start_time}
+          endTime={formData.morning_end_time}
+          bookingOpenTime={formData.morning_booking_open_time}
+          bookingCloseTime={formData.morning_booking_close_time}
+          onUpdate={updateFormData}
+        />
 
-          <div className="border-t pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Booking Window</p>
-            <TimeRow 
-              label="Booking opens" 
-              value={formData.morning_booking_open_time} 
-              onChange={(v) => updateFormData({ morning_booking_open_time: v })} 
-            />
-            <TimeRow 
-              label="Booking closes" 
-              value={formData.morning_booking_close_time} 
-              onChange={(v) => updateFormData({ morning_booking_close_time: v })} 
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Evening Clinic */}
-      <Card>
-        <CardHeader className="py-3 pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Moon className="h-4 w-4 text-indigo-500" />
-            Evening Clinic
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-0 pb-3">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs text-muted-foreground">Clinic Name</Label>
-              <Input
-                value={formData.evening_clinic_name}
-                onChange={(e) => updateFormData({ evening_clinic_name: e.target.value })}
-                className="mt-1 h-8"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Address</Label>
-              <Input
-                value={formData.evening_clinic_address}
-                onChange={(e) => updateFormData({ evening_clinic_address: e.target.value })}
-                className="mt-1 h-8"
-              />
-            </div>
-          </div>
-          
-          <div className="border-t pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Clinic Hours</p>
-            <TimeRow 
-              label="Opens at" 
-              value={formData.evening_start_time} 
-              onChange={(v) => updateFormData({ evening_start_time: v })} 
-            />
-            <TimeRow 
-              label="Closes at" 
-              value={formData.evening_end_time} 
-              onChange={(v) => updateFormData({ evening_end_time: v })} 
-            />
-          </div>
-
-          <div className="border-t pt-2">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Booking Window</p>
-            <TimeRow 
-              label="Booking opens" 
-              value={formData.evening_booking_open_time} 
-              onChange={(v) => updateFormData({ evening_booking_open_time: v })} 
-            />
-            <TimeRow 
-              label="Booking closes" 
-              value={formData.evening_booking_close_time} 
-              onChange={(v) => updateFormData({ evening_booking_close_time: v })} 
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <ClinicSection
+          type="evening"
+          icon={<Moon className="h-4 w-4" />}
+          title="Evening"
+          clinicName={formData.evening_clinic_name}
+          clinicAddress={formData.evening_clinic_address}
+          startTime={formData.evening_start_time}
+          endTime={formData.evening_end_time}
+          bookingOpenTime={formData.evening_booking_open_time}
+          bookingCloseTime={formData.evening_booking_close_time}
+          onUpdate={updateFormData}
+        />
+      </div>
 
       {/* Save Button */}
       <Button 
         onClick={saveSettings} 
         disabled={isSaving || !hasChanges}
         className="w-full gap-2"
-        size="lg"
+        size="default"
       >
         {isSaving ? (
           <>
@@ -395,7 +404,7 @@ export function SettingsPanel() {
         ) : (
           <>
             <Save className="h-4 w-4" />
-            Save Changes
+            {hasChanges ? 'Save Changes' : 'All Saved'}
           </>
         )}
       </Button>
