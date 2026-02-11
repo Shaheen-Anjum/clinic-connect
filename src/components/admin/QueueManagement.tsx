@@ -148,12 +148,15 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
   };
 
   const reinstateNoShow = async (bookingId: string, patientName: string) => {
-    // Find the highest queue number among waiting patients
-    const maxWaitingQueue = waitingQueue.length > 0 
-      ? Math.max(...bookings.filter(b => b.status === 'waiting').map(b => b.queue_number))
+    const currentWaiting = bookings.filter(b => b.status === 'waiting');
+    const waitingCount = currentWaiting.length;
+    const maxQueueNumber = currentWaiting.length > 0
+      ? Math.max(...currentWaiting.map(b => b.queue_number))
       : Math.max(...bookings.map(b => b.queue_number));
     
-    const newQueueNumber = maxWaitingQueue + 3;
+    // Place after min(3, waitingCount) patients from the end of queue
+    const offset = Math.min(3, waitingCount);
+    const newQueueNumber = maxQueueNumber + offset;
 
     const { error } = await supabase
       .from('bookings')
