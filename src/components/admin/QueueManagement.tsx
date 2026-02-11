@@ -148,15 +148,33 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
   };
 
   const reinstateNoShow = async (bookingId: string, patientName: string) => {
-    const currentWaiting = bookings.filter(b => b.status === 'waiting');
-    const waitingCount = currentWaiting.length;
-    const maxQueueNumber = currentWaiting.length > 0
-      ? Math.max(...currentWaiting.map(b => b.queue_number))
-      : Math.max(...bookings.map(b => b.queue_number));
-    
-    // Place after min(3, waitingCount) patients from the end of queue
-    const offset = Math.min(3, waitingCount);
-    const newQueueNumber = maxQueueNumber + offset;
+    const sortedWaiting = [...bookings.filter(b => b.status === 'waiting')]
+      .sort((a, b) => a.queue_number - b.queue_number);
+    const waitingCount = sortedWaiting.length;
+    const insertAfter = Math.min(3, waitingCount);
+
+    let newQueueNumber: number;
+
+    if (waitingCount === 0) {
+      // No one waiting, just use max queue number + 1
+      const maxQ = Math.max(...bookings.map(b => b.queue_number), 0);
+      newQueueNumber = maxQ + 1;
+    } else if (insertAfter >= waitingCount) {
+      // 3 or fewer waiting, place at the end
+      newQueueNumber = sortedWaiting[waitingCount - 1].queue_number + 1;
+    } else {
+      // Insert after the 3rd waiting patient, shift the rest
+      newQueueNumber = sortedWaiting[insertAfter].queue_number;
+      
+      // Shift all patients from insertAfter position onwards by +1
+      const patientsToShift = sortedWaiting.slice(insertAfter);
+      for (const p of patientsToShift.reverse()) {
+        await supabase
+          .from('bookings')
+          .update({ queue_number: p.queue_number + 1 })
+          .eq('id', p.id);
+      }
+    }
 
     const { error } = await supabase
       .from('bookings')
