@@ -14,6 +14,7 @@ interface Booking {
   queue_number: number;
   status: string;
   created_at: string;
+  is_reinstated: boolean;
 }
 
 interface QueueManagementProps {
@@ -110,7 +111,7 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
   const markAsConsulted = async (bookingId: string, patientName: string) => {
     const { error } = await supabase
       .from('bookings')
-      .update({ status: 'consulted', consulted_at: new Date().toISOString() })
+      .update({ status: 'consulted', consulted_at: new Date().toISOString(), is_reinstated: false })
       .eq('id', bookingId);
 
     if (error) {
@@ -156,29 +157,20 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
     let newQueueNumber: number;
 
     if (waitingCount === 0) {
-      // No one waiting, just use max queue number + 1
       const maxQ = Math.max(...bookings.map(b => b.queue_number), 0);
       newQueueNumber = maxQ + 1;
     } else if (insertAfter >= waitingCount) {
       // 3 or fewer waiting, place at the end
       newQueueNumber = sortedWaiting[waitingCount - 1].queue_number + 1;
     } else {
-      // Insert after the 3rd waiting patient, shift the rest
+      // Place with same queue number as the patient at insertAfter position
+      // No shifting - just mark as reinstated so they sort after regular patients
       newQueueNumber = sortedWaiting[insertAfter].queue_number;
-      
-      // Shift all patients from insertAfter position onwards by +1
-      const patientsToShift = sortedWaiting.slice(insertAfter);
-      for (const p of patientsToShift.reverse()) {
-        await supabase
-          .from('bookings')
-          .update({ queue_number: p.queue_number + 1 })
-          .eq('id', p.id);
-      }
     }
 
     const { error } = await supabase
       .from('bookings')
-      .update({ status: 'waiting', queue_number: newQueueNumber })
+      .update({ status: 'waiting', queue_number: newQueueNumber, is_reinstated: true })
       .eq('id', bookingId);
 
     if (error) {
@@ -190,12 +182,13 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
     } else {
       toast({
         title: "Patient Reinstated",
-        description: `${patientName} has been added back to queue at #${newQueueNumber}.`,
+        description: `${patientName} has been added back to queue at #${newQueueNumber}*.`,
       });
     }
   };
 
-  const waitingQueue = bookings.filter(b => b.status === 'waiting');
+  const waitingQueue = bookings.filter(b => b.status === 'waiting')
+    .sort((a, b) => a.queue_number - b.queue_number || (a.is_reinstated ? 1 : 0) - (b.is_reinstated ? 1 : 0));
   const consultedQueue = bookings.filter(b => b.status === 'consulted');
   const noShowQueue = bookings.filter(b => b.status === 'no_show');
   
@@ -255,8 +248,8 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
                 className="flex items-center justify-between rounded-xl border bg-card p-4 transition-all hover:shadow-card"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold ${isMorning ? 'bg-morning/20 text-morning' : 'bg-evening/20 text-evening'}`}>
-                    #{booking.queue_number}
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm ${isMorning ? 'bg-morning/20 text-morning' : 'bg-evening/20 text-evening'}`}>
+                    #{booking.queue_number}{booking.is_reinstated ? '*' : ''}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

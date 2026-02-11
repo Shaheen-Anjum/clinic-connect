@@ -1,0 +1,1 @@
+ALTER TABLE public.bookings ADD COLUMN is_reinstated boolean NOT NULL DEFAULT false;
