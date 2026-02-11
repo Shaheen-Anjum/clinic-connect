@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Sun, Moon, CheckCircle2, Clock, Phone, User, XCircle, UserX } from 'lucide-react';
+import { Sun, Moon, CheckCircle2, Clock, Phone, User, XCircle, UserX, RotateCcw } from 'lucide-react';
 
 interface Booking {
   id: string;
@@ -143,6 +143,33 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
       toast({
         title: "Marked as No Show",
         description: `${patientName} has been marked as no show.`,
+      });
+    }
+  };
+
+  const reinstateNoShow = async (bookingId: string, patientName: string) => {
+    // Find the highest queue number among waiting patients
+    const maxWaitingQueue = waitingQueue.length > 0 
+      ? Math.max(...bookings.filter(b => b.status === 'waiting').map(b => b.queue_number))
+      : Math.max(...bookings.map(b => b.queue_number));
+    
+    const newQueueNumber = maxWaitingQueue + 3;
+
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'waiting', queue_number: newQueueNumber })
+      .eq('id', bookingId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reinstate patient.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Patient Reinstated",
+        description: `${patientName} has been added back to queue at #${newQueueNumber}.`,
       });
     }
   };
@@ -285,7 +312,18 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
                     <Badge variant="destructive">#{booking.queue_number}</Badge>
                     <span className="text-sm">{booking.patient_name}</span>
                   </div>
-                  <XCircle className="h-4 w-4 text-destructive" />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => reinstateNoShow(booking.id, booking.patient_name)}
+                      className="gap-1 text-xs h-7 border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reinstate
+                    </Button>
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  </div>
                 </div>
               ))}
             </div>
