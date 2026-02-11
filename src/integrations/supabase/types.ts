@@ -20,6 +20,7 @@ export type Database = {
           consulted_at: string | null
           created_at: string
           id: string
+          is_reinstated: boolean
           patient_name: string
           phone: string
           queue_number: number
@@ -31,6 +32,7 @@ export type Database = {
           consulted_at?: string | null
           created_at?: string
           id?: string
+          is_reinstated?: boolean
           patient_name: string
           phone: string
           queue_number: number
@@ -42,6 +44,7 @@ export type Database = {
           consulted_at?: string | null
           created_at?: string
           id?: string
+          is_reinstated?: boolean
           patient_name?: string
           phone?: string
           queue_number?: number
