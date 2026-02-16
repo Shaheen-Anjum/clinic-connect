@@ -540,7 +540,9 @@ export function BookingCard({ slotType }: BookingCardProps) {
         </CardHeader>
         <CardContent className="space-y-6 text-center">
           <div className={`rounded-xl p-6 ${isMorning ? 'bg-morning/10' : 'bg-evening/10'}`}>
-            <p className="text-sm text-muted-foreground">Your Queue Number</p>
+            <p className="text-sm text-muted-foreground">
+              {isStaff ? `${patientName}'s Queue Number` : 'Your Queue Number'}
+            </p>
             <p className={`text-5xl font-bold font-display ${isMorning ? 'text-morning' : 'text-evening'}`}>
               #{bookingResult.queueNumber}
             </p>
@@ -564,6 +566,22 @@ export function BookingCard({ slotType }: BookingCardProps) {
             <MapPin className="h-4 w-4" />
             <span>{clinic.address}</span>
           </div>
+
+          {isStaff && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => {
+                setBookingResult(null);
+                setPatientName('');
+                setMobileNumber('');
+                setCaptchaChecked(false);
+              }}
+            >
+              Book Another Patient
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
