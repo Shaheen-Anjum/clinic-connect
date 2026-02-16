@@ -109,6 +109,8 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
   };
 
   const markAsConsulted = async (bookingId: string, patientName: string) => {
+    const consultedBooking = bookings.find(b => b.id === bookingId);
+    
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'consulted', consulted_at: new Date().toISOString(), is_reinstated: false })
@@ -121,6 +123,19 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
         variant: "destructive",
       });
     } else {
+      // Decrement queue numbers of reinstated patients who are behind the consulted patient
+      if (consultedBooking) {
+        const reinstatedBehind = bookings.filter(
+          b => b.is_reinstated && b.status === 'waiting' && b.queue_number > consultedBooking.queue_number
+        );
+        for (const p of reinstatedBehind) {
+          await supabase
+            .from('bookings')
+            .update({ queue_number: p.queue_number - 1 })
+            .eq('id', p.id);
+        }
+      }
+
       toast({
         title: "Patient Consulted",
         description: `${patientName} has been marked as consulted.`,
