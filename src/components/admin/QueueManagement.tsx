@@ -125,14 +125,23 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
     } else {
       // Decrement queue numbers of reinstated patients who are behind the consulted patient
       if (consultedBooking) {
-        const reinstatedBehind = bookings.filter(
-          b => b.is_reinstated && b.status === 'waiting' && b.queue_number > consultedBooking.queue_number
-        );
-        for (const p of reinstatedBehind) {
-          await supabase
-            .from('bookings')
-            .update({ queue_number: p.queue_number - 1 })
-            .eq('id', p.id);
+        const today = new Date().toISOString().split('T')[0];
+        const { data: reinstatedPatients } = await supabase
+          .from('bookings')
+          .select('id, queue_number')
+          .eq('booking_date', today)
+          .eq('slot_type', slotType)
+          .eq('status', 'waiting')
+          .eq('is_reinstated', true)
+          .gt('queue_number', consultedBooking.queue_number);
+
+        if (reinstatedPatients && reinstatedPatients.length > 0) {
+          for (const p of reinstatedPatients) {
+            await supabase
+              .from('bookings')
+              .update({ queue_number: p.queue_number - 1 })
+              .eq('id', p.id);
+          }
         }
       }
 
