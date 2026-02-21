@@ -249,7 +249,7 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
+    <div className="space-y-4 max-w-6xl mx-auto">
       {/* Consultation Duration - Compact horizontal card */}
       <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl border border-primary/20 px-4 py-3">
         <div className="flex items-center gap-3">
@@ -266,7 +266,7 @@ export function SettingsPanel() {
             value={formData.minutes_per_patient.toString()} 
             onValueChange={(v) => updateFormData({ minutes_per_patient: parseInt(v) })}
           >
-            <SelectTrigger className="w-20 h-9 font-semibold border-primary/30 bg-primary/10">
+            <SelectTrigger className="w-24 h-9 font-semibold border-primary/30 bg-primary/10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
