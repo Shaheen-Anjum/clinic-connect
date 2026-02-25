@@ -21,7 +21,7 @@ export function StatusBanner() {
     const { data: settings } = await supabase
       .from('clinic_settings')
       .select('doctor_available')
-      .single();
+      .maybeSingle();
 
     if (settings) {
       setIsAvailable(settings.doctor_available);

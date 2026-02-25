@@ -53,7 +53,7 @@ export function HomeBookingCard({ slotType }: HomeBookingCardProps) {
     const { data: settingsData } = await supabase
       .from('clinic_settings')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (settingsData) {
       setSettings(settingsData);

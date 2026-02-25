@@ -63,7 +63,7 @@ export function BookingCard({ slotType }: BookingCardProps) {
     const { data: settingsData } = await supabase
       .from('clinic_settings')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (settingsData) {
       setSettings(settingsData);

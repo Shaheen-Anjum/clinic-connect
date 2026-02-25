@@ -46,7 +46,7 @@ export function QueueManagement({ slotType }: QueueManagementProps) {
     const { data: settingsData } = await supabase
       .from('clinic_settings')
       .select('morning_clinic_name, evening_clinic_name, minutes_per_patient, morning_start_time, evening_start_time')
-      .single();
+      .maybeSingle();
 
     if (settingsData) {
       setSettings(settingsData);
