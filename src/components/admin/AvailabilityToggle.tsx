@@ -23,11 +23,11 @@ export function AvailabilityToggle() {
     const { data, error } = await supabase
       .from('clinic_settings')
       .select('id, doctor_available')
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching availability:', error);
-    } else {
+    } else if (data) {
       setIsAvailable(data.doctor_available);
       setSettingsId(data.id);
     }

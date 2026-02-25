@@ -84,7 +84,7 @@ const MyBooking = () => {
     const { data: settingsData } = await supabase
       .from('clinic_settings')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (settingsData) {
       setSettings(settingsData);

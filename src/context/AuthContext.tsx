@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.log('No role found for user:', error.message);
@@ -46,38 +46,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const clearBrokenLocalSession = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // Ignore local sign-out failures and continue clearing storage
+    }
+
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (_event, nextSession) => {
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
 
         // Defer role fetching with setTimeout to avoid deadlock
-        if (session?.user) {
+        if (nextSession?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id).then(setRole);
+            fetchUserRole(nextSession.user.id).then((fetchedRole) => {
+              setRole(fetchedRole);
+              setIsLoading(false);
+            });
           }, 0);
         } else {
           setRole(null);
+          setIsLoading(false);
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const initSession = async () => {
+      const { data: { session: initialSession }, error } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        fetchUserRole(session.user.id).then((fetchedRole) => {
-          setRole(fetchedRole);
-          setIsLoading(false);
-        });
-      } else {
+      if (error) {
+        console.error('Error restoring session:', error);
+
+        if (error.message?.toLowerCase().includes('failed to fetch')) {
+          await clearBrokenLocalSession();
+        }
+
+        setSession(null);
+        setUser(null);
+        setRole(null);
         setIsLoading(false);
+        return;
       }
-    });
+
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+
+      if (initialSession?.user) {
+        const fetchedRole = await fetchUserRole(initialSession.user.id);
+        setRole(fetchedRole);
+      } else {
+        setRole(null);
+      }
+
+      setIsLoading(false);
+    };
+
+    initSession();
 
     return () => subscription.unsubscribe();
   }, []);
